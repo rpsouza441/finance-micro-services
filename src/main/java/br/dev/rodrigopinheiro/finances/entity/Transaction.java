@@ -13,6 +13,8 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Locale.Category;
 
+import br.dev.rodrigopinheiro.finances.entity.enums.TransactionType;
+
 @Entity
 @Table(name = "tb_transaction")
 public class Transaction {
@@ -58,23 +60,67 @@ public class Transaction {
     private Category category;
 
     @ManyToOne
+    @JoinColumn(name = "credit_card_statement_id")
+    private CreditCardStatement creditCardStatement;
+
+    @ManyToOne
     @JoinColumn(name = "bank_accoint_id")
     private BankAccount bankAccount;
 
     public Transaction() {
     }
 
-    public Transaction(String description, String note, BigDecimal amount, TransactionType transactionType,
-            boolean isRecurrent, LocalDateTime dueDate, LocalDateTime creationDate, Category category,
-            BankAccount bankAccount) {
+    public Transaction(String description, String note, BigDecimal amount, BigDecimal interest, BigDecimal discount,
+            TransactionType transactionType, boolean isRecurrent, LocalDateTime dueDate, LocalDateTime creationDate,
+            LocalDateTime effectivedDate, Category category) {
         this.description = description;
         this.note = note;
         this.amount = amount;
+        this.interest = interest;
+        this.discount = discount;
         this.transactionType = transactionType;
         this.isRecurrent = isRecurrent;
         this.dueDate = dueDate;
         this.creationDate = creationDate;
+        this.effectivedDate = effectivedDate;
         this.category = category;
+    }
+
+    public Transaction(String description, String note, BigDecimal amount, BigDecimal interest, BigDecimal discount,
+            TransactionType transactionType, boolean isRecurrent, boolean isEffective, LocalDateTime dueDate,
+            LocalDateTime creationDate, LocalDateTime effectivedDate, Category category, BankAccount bankAccount) {
+        this.description = description;
+        this.note = note;
+        this.amount = amount;
+        this.interest = interest;
+        this.discount = discount;
+        this.transactionType = transactionType;
+        this.isRecurrent = isRecurrent;
+        this.isEffective = isEffective;
+        this.dueDate = dueDate;
+        this.creationDate = creationDate;
+        this.effectivedDate = effectivedDate;
+        this.category = category;
+        this.bankAccount = bankAccount;
+    }
+
+    public Transaction(String description, String note, BigDecimal amount, BigDecimal interest, BigDecimal discount,
+            TransactionType transactionType, boolean isRecurrent, boolean isEffective, LocalDateTime dueDate,
+            LocalDateTime creationDate, LocalDateTime effectivedDate, Category category,
+            CreditCardStatement creditCardStatement, BankAccount bankAccount) {
+        this.description = description;
+        this.note = note;
+        this.amount = amount;
+        this.interest = interest;
+        this.discount = discount;
+        this.transactionType = transactionType;
+        this.isRecurrent = isRecurrent;
+        this.isEffective = isEffective;
+        this.dueDate = dueDate;
+        this.creationDate = creationDate;
+        this.effectivedDate = effectivedDate;
+        this.category = category;
+        this.creditCardStatement = creditCardStatement;
         this.bankAccount = bankAccount;
     }
 
@@ -108,6 +154,22 @@ public class Transaction {
 
     public void setAmount(BigDecimal amount) {
         this.amount = amount;
+    }
+
+    public BigDecimal getInterest() {
+        return interest;
+    }
+
+    public void setInterest(BigDecimal interest) {
+        this.interest = interest;
+    }
+
+    public BigDecimal getDiscount() {
+        return discount;
+    }
+
+    public void setDiscount(BigDecimal discount) {
+        this.discount = discount;
     }
 
     public TransactionType getTransactionType() {
@@ -164,6 +226,14 @@ public class Transaction {
 
     public void setCategory(Category category) {
         this.category = category;
+    }
+
+    public CreditCardStatement getCreditCardStatement() {
+        return creditCardStatement;
+    }
+
+    public void setCreditCardStatement(CreditCardStatement creditCardStatement) {
+        this.creditCardStatement = creditCardStatement;
     }
 
     public BankAccount getBankAccount() {

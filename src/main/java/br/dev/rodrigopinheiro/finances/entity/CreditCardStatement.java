@@ -10,6 +10,8 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
@@ -25,8 +27,17 @@ public class CreditCardStatement {
     @Column(name = "year")
     private String year;
 
+    @Column(name = "payed")
+    private boolean isPayed;
+
+    @Column(name = "effectived_date")
+    private LocalDateTime effectivedDate;
+
     @OneToMany(mappedBy = "statement", fetch = FetchType.LAZY)
-    private List<CreditCardTransaction> transactions;
+    private List<CreditCardTransaction> creditCardTransactions;
+
+    @OneToMany(mappedBy = "creditCardStatement", fetch = FetchType.LAZY)
+    private List<Transaction> transactions;
 
     @ManyToOne
     @JoinColumn(name = "credit_card_id")
@@ -35,11 +46,9 @@ public class CreditCardStatement {
     public CreditCardStatement() {
     }
 
-    public CreditCardStatement(String month, String year, List<CreditCardTransaction> transactions,
-            CreditCard creditCard) {
+    public CreditCardStatement(String month, String year, CreditCard creditCard) {
         this.month = month;
         this.year = year;
-        this.transactions = transactions;
         this.creditCard = creditCard;
     }
 
@@ -67,11 +76,35 @@ public class CreditCardStatement {
         this.year = year;
     }
 
-    public List<CreditCardTransaction> getTransactions() {
+    public boolean isPayed() {
+        return isPayed;
+    }
+
+    public void setPayed(boolean isPayed) {
+        this.isPayed = isPayed;
+    }
+
+    public LocalDateTime getEffectivedDate() {
+        return effectivedDate;
+    }
+
+    public void setEffectivedDate(LocalDateTime effectivedDate) {
+        this.effectivedDate = effectivedDate;
+    }
+
+    public List<CreditCardTransaction> getCreditCardTransactions() {
+        return creditCardTransactions;
+    }
+
+    public void setCreditCardTransactions(List<CreditCardTransaction> creditCardTransactions) {
+        this.creditCardTransactions = creditCardTransactions;
+    }
+
+    public List<Transaction> getTransactions() {
         return transactions;
     }
 
-    public void setTransactions(List<CreditCardTransaction> transactions) {
+    public void setTransactions(List<Transaction> transactions) {
         this.transactions = transactions;
     }
 
@@ -82,5 +115,4 @@ public class CreditCardStatement {
     public void setCreditCard(CreditCard creditCard) {
         this.creditCard = creditCard;
     }
-
 }

@@ -1,4 +1,4 @@
-package br.dev.rodrigopinheiro.finances.entity;
+package br.dev.rodrigopinheiro.finances.entity.enums;
 
 public enum TransactionType {
     DEBIT(1, "Debit"),
