@@ -5,6 +5,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
@@ -31,6 +33,10 @@ public class CreditCard {
 
     @Column(name = "due_date", nullable = false)
     private LocalDate dueDay;
+
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User user;
 
     @OneToMany(mappedBy = "creditCard")
     private List<CreditCardStatement> statements;
@@ -91,6 +97,14 @@ public class CreditCard {
 
     public void setStatements(List<CreditCardStatement> statements) {
         this.statements = statements;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
     }
 
 }

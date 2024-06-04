@@ -1,20 +1,15 @@
-import org.springframework.beans.factory.annotation.Autowired;
+package br.dev.rodrigopinheiro.finances.service;
+
 import org.springframework.stereotype.Service;
 
 import br.dev.rodrigopinheiro.finances.entity.BankAccount;
 import br.dev.rodrigopinheiro.finances.entity.Transaction;
 import br.dev.rodrigopinheiro.finances.entity.enums.TransactionType;
 import br.dev.rodrigopinheiro.finances.repository.BankAccountRepository;
-import br.dev.rodrigopinheiro.finances.repository.CreditCardRepository;
-import br.dev.rodrigopinheiro.finances.repository.CreditCardStatementRepository;
-import br.dev.rodrigopinheiro.finances.repository.CreditCardTransactionRepository;
 import br.dev.rodrigopinheiro.finances.repository.TransactionRepository;
-import br.dev.rodrigopinheiro.finances.repository.UserRepository;
-import br.dev.rodrigopinheiro.finances.repository.WalletRepository;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.UUID;
 
 @Service
 public class BankAccountService {
@@ -25,14 +20,14 @@ public class BankAccountService {
 
     private WalletService walletService;
 
-    public void creditBankAccount(Long accountId, double amount, boolean isEffective) {
+    public void creditBankAccount(Long accountId, BigDecimal amount, boolean isEffective) {
         BankAccount account = bankAccountRepository.findById(accountId).orElseThrow();
-        account.setBalance(account.getBalance() + amount);
+        account.credit(amount);
 
         Transaction transaction = new Transaction();
-        transaction.setDate(LocalDateTime.now());
+        transaction.setCreationDate(LocalDateTime.now());
         transaction.setAmount(amount);
-        transaction.setType(TransactionType.CREDIT);
+        transaction.setTransactionType(TransactionType.CREDIT);
         transaction.setEffective(isEffective);
         transaction.setBankAccount(account);
 
@@ -44,14 +39,14 @@ public class BankAccountService {
         }
     }
 
-    public void debitBankAccount(Long accountId, double amount, boolean isEffective) {
+    public void debitBankAccount(Long accountId, BigDecimal amount, boolean isEffective) {
         BankAccount account = bankAccountRepository.findById(accountId).orElseThrow();
-        account.setBalance(account.getBalance() - amount);
+        account.debit(amount);
 
         Transaction transaction = new Transaction();
-        transaction.setDate(LocalDateTime.now());
+        transaction.setCreationDate(LocalDateTime.now());
         transaction.setAmount(amount);
-        transaction.setType(TransactionType.DEBIT);
+        transaction.setTransactionType(TransactionType.DEBIT);
         transaction.setEffective(isEffective);
         transaction.setBankAccount(account);
 
@@ -59,28 +54,28 @@ public class BankAccountService {
         bankAccountRepository.save(account);
 
         if (isEffective) {
-            walletService.updateWalletBalance(account.getUser().getId(), -amount);
+            walletService.updateWalletBalance(account.getUser().getId(), amount.negate());
         }
     }
 
-    public void transferBetweenAccounts(Long fromAccountId, Long toAccountId, double amount, boolean isEffective) {
+    public void transferBetweenAccounts(Long fromAccountId, Long toAccountId, BigDecimal amount, boolean isEffective) {
         BankAccount fromAccount = bankAccountRepository.findById(fromAccountId).orElseThrow();
         BankAccount toAccount = bankAccountRepository.findById(toAccountId).orElseThrow();
 
-        fromAccount.setBalance(fromAccount.getBalance() - amount);
-        toAccount.setBalance(toAccount.getBalance() + amount);
+        fromAccount.debit(amount);
+        toAccount.credit(amount);
 
         Transaction debitTransaction = new Transaction();
-        debitTransaction.setDate(LocalDateTime.now());
+        debitTransaction.setCreationDate(LocalDateTime.now());
         debitTransaction.setAmount(amount);
-        debitTransaction.setType(TransactionType.TRANSFER);
+        debitTransaction.setTransactionType(TransactionType.TRANSFER);
         debitTransaction.setEffective(isEffective);
         debitTransaction.setBankAccount(fromAccount);
 
         Transaction creditTransaction = new Transaction();
-        creditTransaction.setDate(LocalDateTime.now());
+        creditTransaction.setCreationDate(LocalDateTime.now());
         creditTransaction.setAmount(amount);
-        creditTransaction.setType(TransactionType.TRANSFER);
+        creditTransaction.setTransactionType(TransactionType.TRANSFER);
         creditTransaction.setEffective(isEffective);
         creditTransaction.setBankAccount(toAccount);
 
@@ -91,7 +86,7 @@ public class BankAccountService {
         bankAccountRepository.save(toAccount);
 
         if (isEffective) {
-            walletService.updateWalletBalance(fromAccount.getUser().getId(), -amount);
+            walletService.updateWalletBalance(fromAccount.getUser().getId(), amount.negate());
             walletService.updateWalletBalance(toAccount.getUser().getId(), amount);
         }
     }

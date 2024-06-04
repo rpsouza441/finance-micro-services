@@ -1,3 +1,5 @@
+package br.dev.rodrigopinheiro.finances.service;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -10,6 +12,7 @@ import br.dev.rodrigopinheiro.finances.repository.TransactionRepository;
 import br.dev.rodrigopinheiro.finances.repository.UserRepository;
 import br.dev.rodrigopinheiro.finances.repository.WalletRepository;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -20,7 +23,7 @@ public class WalletService {
     @Autowired
     private WalletRepository walletRepository;
 
-    protected void updateWalletBalance(Long userId, double amount) {
+    protected void updateWalletBalance(Long userId, BigDecimal amount) {
         Wallet wallet = walletRepository.findByUserId(userId);
         if (wallet == null) {
             wallet = new Wallet();

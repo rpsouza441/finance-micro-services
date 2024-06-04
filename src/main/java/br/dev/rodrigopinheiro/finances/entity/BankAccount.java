@@ -36,6 +36,14 @@ public class BankAccount {
         this.user = user;
     }
 
+    public void debit(BigDecimal value) {
+        this.bankBalance = this.bankBalance.subtract(value);
+    }
+
+    public void credit(BigDecimal value) {
+        this.bankBalance = this.bankBalance.add(value);
+    }
+
     public Long getId() {
         return id;
     }
