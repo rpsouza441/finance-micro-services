@@ -1,10 +1,19 @@
 package br.dev.rodrigopinheiro.finances.entity;
 
-import jakarta.persistence.*;
-import org.hibernate.annotations.DynamicUpdate;
-
 import java.math.BigDecimal;
 import java.util.List;
+
+import org.hibernate.annotations.DynamicUpdate;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
 
 @DynamicUpdate
 @Entity
@@ -27,6 +36,17 @@ public class BankAccount {
     @OneToMany(mappedBy = "bankAccount")
     private List<Transaction> transactions;
 
+    public void debit(BigDecimal value) {
+        this.bankBalance = this.bankBalance.subtract(value);
+    }
+
+    public void credit(BigDecimal value) {
+        this.bankBalance = this.bankBalance.add(value);
+    }
+
+    public boolean isBalanceEqualOrGreaterThan(BigDecimal value) {
+        return this.bankBalance.doubleValue() >= value.doubleValue();
+    }
     public BankAccount() {
     }
 
@@ -36,13 +56,6 @@ public class BankAccount {
         this.user = user;
     }
 
-    public void debit(BigDecimal value) {
-        this.bankBalance = this.bankBalance.subtract(value);
-    }
-
-    public void credit(BigDecimal value) {
-        this.bankBalance = this.bankBalance.add(value);
-    }
 
     public Long getId() {
         return id;

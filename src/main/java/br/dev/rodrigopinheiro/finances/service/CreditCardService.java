@@ -1,6 +1,5 @@
 package br.dev.rodrigopinheiro.finances.service;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import br.dev.rodrigopinheiro.finances.entity.BankAccount;
@@ -14,8 +13,6 @@ import br.dev.rodrigopinheiro.finances.repository.CreditCardRepository;
 import br.dev.rodrigopinheiro.finances.repository.CreditCardStatementRepository;
 import br.dev.rodrigopinheiro.finances.repository.CreditCardTransactionRepository;
 import br.dev.rodrigopinheiro.finances.repository.TransactionRepository;
-import br.dev.rodrigopinheiro.finances.repository.UserRepository;
-import br.dev.rodrigopinheiro.finances.repository.WalletRepository;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -27,21 +24,25 @@ import java.util.UUID;
 @Service
 public class CreditCardService {
 
-    private BankAccountRepository bankAccountRepository;
+    private final BankAccountRepository bankAccountRepository;
 
-    private CreditCardRepository creditCardRepository;
+    private final CreditCardRepository creditCardRepository;
 
-    private TransactionRepository transactionRepository;
+    private final TransactionRepository transactionRepository;
 
-    private CreditCardTransactionRepository creditCardTransactionRepository;
+    private final CreditCardTransactionRepository creditCardTransactionRepository;
 
-    private CreditCardStatementRepository creditCardStatementRepository;
+    private final CreditCardStatementRepository creditCardStatementRepository;
 
-    private WalletService walletService;
+    private final WalletService walletService;
 
-    public CreditCardService(CreditCardRepository creditCardRepository, TransactionRepository transactionRepository,
+   
+
+    public CreditCardService( BankAccountRepository bankAccountRepository, CreditCardRepository creditCardRepository,
+            TransactionRepository transactionRepository,
             CreditCardTransactionRepository creditCardTransactionRepository,
             CreditCardStatementRepository creditCardStatementRepository, WalletService walletService) {
+        this.bankAccountRepository = bankAccountRepository;
         this.creditCardRepository = creditCardRepository;
         this.transactionRepository = transactionRepository;
         this.creditCardTransactionRepository = creditCardTransactionRepository;
@@ -65,7 +66,7 @@ public class CreditCardService {
         }
 
         if (isEffective) {
-            walletService.updateWalletBalance(creditCard.getUser().getId(), amount.negate());
+            walletService.debitWalletBalance(creditCard.getUser().getId(), amount);
         }
     }
 
@@ -77,39 +78,40 @@ public class CreditCardService {
             if (!installment.isRefunded()) {
                 installment.setRefunded(true);
                 creditCardTransactionRepository.save(installment);
-                walletService.updateWalletBalance(installment.getStatement().getCreditCard().getUser().getId(),
+                walletService.creditWalletBalance(installment.getStatement().getCreditCard().getUser().getId(),
                         installment.getAmount());
             }
         }
     }
 
-    public void payCreditCardStatement(Long statementId, Long bankAccountId) {
+    public void payCreditCardStatement(Long statementId, Long bankAccountId, BigDecimal amount) {
+        //To-Do exceptions
         CreditCardStatement statement = creditCardStatementRepository.findById(statementId).orElseThrow();
-        BankAccount account = bankAccountRepository.findById(bankAccountId).orElseThrow();
+        
+        BankAccount account =  bankAccountRepository.findById(bankAccountId).orElseThrow();
 
-        double amountDue = statement.getAmountDue();
-
-        if (account.getBalance() < amountDue) {
+        if (account.isBalanceEqualOrGreaterThan(amount)) {
             throw new RuntimeException("Insufficient funds in the bank account.");
         }
 
-        account.setBalance(account.getBalance() - amountDue);
+
+        account.debit(amount);
 
         Transaction paymentTransaction = new Transaction();
-        paymentTransaction.setDate(LocalDateTime.now());
-        paymentTransaction.setAmount(amountDue);
-        paymentTransaction.setType(TransactionType.DEBIT);
+        paymentTransaction.setCreationDate(LocalDateTime.now());
+        paymentTransaction.setAmount(amount);
+        paymentTransaction.setTransactionType(TransactionType.DEBIT);
         paymentTransaction.setEffective(true); // Payment is effective
         paymentTransaction.setBankAccount(account);
 
         transactionRepository.save(paymentTransaction);
         bankAccountRepository.save(account);
 
-        statement.setAmountDue(0);
-        statement.setPaid(true); // Mark the statement as paid
+        statement.setAmountPayed(amount);
+        statement.setPayed(true); // Mark the statement as paid
         creditCardStatementRepository.save(statement);
 
-        walletService.updateWalletBalance(account.getUser().getId(), -amountDue);
+        walletService.debitWalletBalance(account.getUser().getId(), amount);
     }
 
     public void payCreditCardStatement(Long statementId, Long bankAccountId) {

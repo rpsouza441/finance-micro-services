@@ -1,5 +1,9 @@
 package br.dev.rodrigopinheiro.finances.entity;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -10,9 +14,6 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
-
-import java.time.LocalDateTime;
-import java.util.List;
 
 @Entity
 @Table(name = "tb_credit_card_statement")
@@ -29,6 +30,13 @@ public class CreditCardStatement {
 
     @Column(name = "payed")
     private boolean isPayed;
+    
+    @Column(name = "amount_due")
+    private BigDecimal amountDue;
+
+    @Column(name = "amount_payed")
+    private BigDecimal amountPayed;
+
 
     @Column(name = "effectived_date")
     private LocalDateTime effectivedDate;
@@ -46,11 +54,22 @@ public class CreditCardStatement {
     public CreditCardStatement() {
     }
 
-    public CreditCardStatement(String month, String year, CreditCard creditCard) {
+   
+    
+    public CreditCardStatement(String month, String year, boolean isPayed, BigDecimal amountDue,
+            LocalDateTime effectivedDate, List<CreditCardTransaction> creditCardTransactions, CreditCard creditCard) {
         this.month = month;
         this.year = year;
+        this.isPayed = isPayed;
+        this.amountDue = amountDue;
+        this.effectivedDate = effectivedDate;
+        this.creditCardTransactions = creditCardTransactions;
         this.creditCard = creditCard;
     }
+
+
+
+
 
     public Long getId() {
         return id;
@@ -114,5 +133,31 @@ public class CreditCardStatement {
 
     public void setCreditCard(CreditCard creditCard) {
         this.creditCard = creditCard;
+    }
+
+
+    public BigDecimal getAmountDue() {
+        return amountDue;
+    }
+
+
+    public void setAmountDue(BigDecimal amountDue) {
+        this.amountDue = amountDue;
+    }
+
+
+
+
+
+    public BigDecimal getAmountPayed() {
+        return amountPayed;
+    }
+
+
+
+
+
+    public void setAmountPayed(BigDecimal amountPayed) {
+        this.amountPayed = amountPayed;
     }
 }

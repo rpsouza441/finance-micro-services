@@ -1,5 +1,8 @@
 package br.dev.rodrigopinheiro.finances.service;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
 import org.springframework.stereotype.Service;
 
 import br.dev.rodrigopinheiro.finances.entity.BankAccount;
@@ -8,17 +11,23 @@ import br.dev.rodrigopinheiro.finances.entity.enums.TransactionType;
 import br.dev.rodrigopinheiro.finances.repository.BankAccountRepository;
 import br.dev.rodrigopinheiro.finances.repository.TransactionRepository;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-
 @Service
 public class BankAccountService {
 
-    private BankAccountRepository bankAccountRepository;
+    private final BankAccountRepository bankAccountRepository;
 
-    private TransactionRepository transactionRepository;
+    private final TransactionRepository transactionRepository;
 
-    private WalletService walletService;
+    private final  WalletService walletService;
+
+    
+
+    public BankAccountService(BankAccountRepository bankAccountRepository, TransactionRepository transactionRepository,
+            WalletService walletService) {
+        this.bankAccountRepository = bankAccountRepository;
+        this.transactionRepository = transactionRepository;
+        this.walletService = walletService;
+    }
 
     public void creditBankAccount(Long accountId, BigDecimal amount, boolean isEffective) {
         BankAccount account = bankAccountRepository.findById(accountId).orElseThrow();
@@ -35,7 +44,7 @@ public class BankAccountService {
         bankAccountRepository.save(account);
 
         if (isEffective) {
-            walletService.updateWalletBalance(account.getUser().getId(), amount);
+            walletService.creditWalletBalance(account.getUser().getId(), amount);
         }
     }
 
@@ -54,7 +63,7 @@ public class BankAccountService {
         bankAccountRepository.save(account);
 
         if (isEffective) {
-            walletService.updateWalletBalance(account.getUser().getId(), amount.negate());
+            walletService.debitWalletBalance(account.getUser().getId(), amount);
         }
     }
 
@@ -86,8 +95,8 @@ public class BankAccountService {
         bankAccountRepository.save(toAccount);
 
         if (isEffective) {
-            walletService.updateWalletBalance(fromAccount.getUser().getId(), amount.negate());
-            walletService.updateWalletBalance(toAccount.getUser().getId(), amount);
+            walletService.debitWalletBalance(fromAccount.getUser().getId(), amount);
+            walletService.creditWalletBalance(toAccount.getUser().getId(), amount);
         }
     }
 

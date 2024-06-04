@@ -1,37 +1,38 @@
 package br.dev.rodrigopinheiro.finances.service;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import java.math.BigDecimal;
+
 import org.springframework.stereotype.Service;
 
 import br.dev.rodrigopinheiro.finances.entity.Wallet;
-import br.dev.rodrigopinheiro.finances.repository.BankAccountRepository;
-import br.dev.rodrigopinheiro.finances.repository.CreditCardRepository;
-import br.dev.rodrigopinheiro.finances.repository.CreditCardStatementRepository;
-import br.dev.rodrigopinheiro.finances.repository.CreditCardTransactionRepository;
-import br.dev.rodrigopinheiro.finances.repository.TransactionRepository;
-import br.dev.rodrigopinheiro.finances.repository.UserRepository;
 import br.dev.rodrigopinheiro.finances.repository.WalletRepository;
-
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.UUID;
 
 @Service
 public class WalletService {
 
-    @Autowired
-    private WalletRepository walletRepository;
+    private final WalletRepository walletRepository;
 
-    protected void updateWalletBalance(Long userId, BigDecimal amount) {
-        Wallet wallet = walletRepository.findByUserId(userId);
-        if (wallet == null) {
-            wallet = new Wallet();
-            wallet.setUser(userRepository.findById(userId).orElseThrow());
-            wallet.setBalance(0);
-        }
-        wallet.setBalance(wallet.getBalance() + amount);
+    private final UserService userService;
+
+    public WalletService(WalletRepository walletRepository, UserService userService) {
+        this.walletRepository = walletRepository;
+        this.userService = userService;
+    }
+
+    protected void creditWalletBalance(Long userId, BigDecimal amount) {
+        Wallet wallet = getWalletOrCreate(userId);
+        wallet.credit(amount);
         walletRepository.save(wallet);
     }
 
+    protected void debitWalletBalance(Long userId, BigDecimal amount) {
+        Wallet wallet = getWalletOrCreate(userId);
+        wallet.debit(amount);
+        walletRepository.save(wallet);
+    }
+
+    private Wallet getWalletOrCreate(Long userId) {
+        return walletRepository.findByUserId(userId)
+                .orElseGet(() -> new Wallet(BigDecimal.ZERO, userService.findUser(userId)));
+    }
 }

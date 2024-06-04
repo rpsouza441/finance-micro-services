@@ -25,6 +25,14 @@ public class Wallet {
   @JoinColumn(name = "user_id")
   private User user;
 
+
+  public void debit(BigDecimal value) {
+    this.balance = this.balance.subtract(value);
+}
+
+public void credit(BigDecimal value) {
+    this.balance = this.balance.add(value);
+}
   public Wallet() {
   }
 
