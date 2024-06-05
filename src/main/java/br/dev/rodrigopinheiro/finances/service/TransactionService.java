@@ -4,6 +4,7 @@ import org.springframework.stereotype.Service;
 
 import br.dev.rodrigopinheiro.finances.entity.Transaction;
 import br.dev.rodrigopinheiro.finances.entity.enums.TransactionType;
+import br.dev.rodrigopinheiro.finances.exception.TransactionNotFoundException;
 import br.dev.rodrigopinheiro.finances.repository.TransactionRepository;
 
 @Service
@@ -18,23 +19,21 @@ public class TransactionService {
     }
 
     public void markTransactionAsEffective(Long transactionId) {
-        Transaction transaction = transactionRepository.findById(transactionId).orElseThrow();
+        Transaction transaction = transactionRepository.findById(transactionId)
+                .orElseThrow(() -> new TransactionNotFoundException(transactionId));
         if (!transaction.isEffective()) {
             transaction.setEffective(true);
             transactionRepository.save(transaction);
             if (transaction.getTransactionType() == TransactionType.CREDIT) {
                 walletService.creditWalletBalance(
-                    transaction.getBankAccount().getUser().getId(), 
-                    transaction.getAmount()
-                );
+                        transaction.getBankAccount().getUser().getId(),
+                        transaction.getAmount());
             } else {
                 walletService.debitWalletBalance(
-                    transaction.getBankAccount().getUser().getId(), 
-                    transaction.getAmount()
-                );
+                        transaction.getBankAccount().getUser().getId(),
+                        transaction.getAmount());
             }
-            
-          
+
         }
     }
 }

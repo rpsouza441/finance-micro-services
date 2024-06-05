@@ -8,6 +8,9 @@ import br.dev.rodrigopinheiro.finances.entity.CreditCardStatement;
 import br.dev.rodrigopinheiro.finances.entity.CreditCardTransaction;
 import br.dev.rodrigopinheiro.finances.entity.Transaction;
 import br.dev.rodrigopinheiro.finances.entity.enums.TransactionType;
+import br.dev.rodrigopinheiro.finances.exception.BankAccountNotFoundException;
+import br.dev.rodrigopinheiro.finances.exception.CreditCardStatementNotFoundException;
+import br.dev.rodrigopinheiro.finances.exception.StatementAlreadyPaidException;
 import br.dev.rodrigopinheiro.finances.repository.BankAccountRepository;
 import br.dev.rodrigopinheiro.finances.repository.CreditCardRepository;
 import br.dev.rodrigopinheiro.finances.repository.CreditCardStatementRepository;
@@ -36,9 +39,7 @@ public class CreditCardService {
 
     private final WalletService walletService;
 
-   
-
-    public CreditCardService( BankAccountRepository bankAccountRepository, CreditCardRepository creditCardRepository,
+    public CreditCardService(BankAccountRepository bankAccountRepository, CreditCardRepository creditCardRepository,
             TransactionRepository transactionRepository,
             CreditCardTransactionRepository creditCardTransactionRepository,
             CreditCardStatementRepository creditCardStatementRepository, WalletService walletService) {
@@ -85,15 +86,14 @@ public class CreditCardService {
     }
 
     public void payCreditCardStatement(Long statementId, Long bankAccountId, BigDecimal amount) {
-        //To-Do exceptions
+        // To-Do exceptions
         CreditCardStatement statement = creditCardStatementRepository.findById(statementId).orElseThrow();
-        
-        BankAccount account =  bankAccountRepository.findById(bankAccountId).orElseThrow();
+
+        BankAccount account = bankAccountRepository.findById(bankAccountId).orElseThrow();
 
         if (account.isBalanceEqualOrGreaterThan(amount)) {
             throw new RuntimeException("Insufficient funds in the bank account.");
         }
-
 
         account.debit(amount);
 
@@ -116,22 +116,18 @@ public class CreditCardService {
 
     public void payCreditCardStatement(Long statementId, Long bankAccountId) {
         CreditCardStatement statement = creditCardStatementRepository.findById(statementId)
-                .orElseThrow(() -> new ResourceNotFoundException("CreditCardStatement not found"));
+                .orElseThrow(() -> new CreditCardStatementNotFoundException(statementId));
 
         BankAccount bankAccount = bankAccountRepository.findById(bankAccountId)
-                .orElseThrow(() -> new ResourceNotFoundException("BankAccount not found"));
+                .orElseThrow(() -> new BankAccountNotFoundException(bankAccountId));
 
         if (statement.isPayed()) {
-            throw new IllegalStateException("Statement is already paid");
+            throw new StatementAlreadyPaidException("Statement is already paid");
         }
 
         // Create a transaction to record the payment
-        Transaction transaction = new Transaction();
-        transaction.setCreationDate(LocalDateTime.now());
-        transaction.setAmount(statement.getAmountDue());
-        transaction.setEffective(true);
-        transaction.setCreditCardStatement(statement);
-        transaction.setAccount(bankAccount);
+        Transaction transaction = new Transaction(statement.getAmountDue(), TransactionType.DEBIT, true, statement,
+                bankAccount);
 
         // Update the statement to mark it as paid
         statement.setPayed(true);
@@ -142,7 +138,7 @@ public class CreditCardService {
         creditCardStatementRepository.save(statement);
 
         // Update the account balance
-        bankAccount.setBalance(bankAccount.getBalance() - statement.getAmountDue());
+        bankAccount.debit(statement.getAmountDue());
         bankAccountRepository.save(bankAccount);
     }
 

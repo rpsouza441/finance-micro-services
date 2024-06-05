@@ -1,26 +1,22 @@
 package br.dev.rodrigopinheiro.finances.service;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-
 import org.springframework.stereotype.Service;
 
 import br.dev.rodrigopinheiro.finances.entity.BankAccount;
 import br.dev.rodrigopinheiro.finances.entity.Transaction;
 import br.dev.rodrigopinheiro.finances.entity.enums.TransactionType;
+import br.dev.rodrigopinheiro.finances.exception.BankAccountNotFoundException;
 import br.dev.rodrigopinheiro.finances.repository.BankAccountRepository;
 import br.dev.rodrigopinheiro.finances.repository.TransactionRepository;
+import br.dev.rodrigopinheiro.finances.service.dto.TransactionDto;
+import br.dev.rodrigopinheiro.finances.service.dto.TransferDto;
 
 @Service
 public class BankAccountService {
 
     private final BankAccountRepository bankAccountRepository;
-
     private final TransactionRepository transactionRepository;
-
-    private final  WalletService walletService;
-
-    
+    private final WalletService walletService;
 
     public BankAccountService(BankAccountRepository bankAccountRepository, TransactionRepository transactionRepository,
             WalletService walletService) {
@@ -29,74 +25,60 @@ public class BankAccountService {
         this.walletService = walletService;
     }
 
-    public void creditBankAccount(Long accountId, BigDecimal amount, boolean isEffective) {
-        BankAccount account = bankAccountRepository.findById(accountId).orElseThrow();
-        account.credit(amount);
+    public void creditBankAccount(TransactionDto transactionDto) {
+        BankAccount account = bankAccountRepository.findById(transactionDto.accountId())
+                .orElseThrow(() -> new BankAccountNotFoundException(transactionDto.accountId()));
+        account.credit(transactionDto.amount());
 
-        Transaction transaction = new Transaction();
-        transaction.setCreationDate(LocalDateTime.now());
-        transaction.setAmount(amount);
-        transaction.setTransactionType(TransactionType.CREDIT);
-        transaction.setEffective(isEffective);
-        transaction.setBankAccount(account);
+        Transaction transaction = new Transaction(transactionDto.amount(), TransactionType.CREDIT,
+                transactionDto.isEffective(), account);
 
         transactionRepository.save(transaction);
         bankAccountRepository.save(account);
 
-        if (isEffective) {
-            walletService.creditWalletBalance(account.getUser().getId(), amount);
+        if (transactionDto.isEffective()) {
+            walletService.creditWalletBalance(account.getUser().getId(), transactionDto.amount());
         }
     }
 
-    public void debitBankAccount(Long accountId, BigDecimal amount, boolean isEffective) {
-        BankAccount account = bankAccountRepository.findById(accountId).orElseThrow();
-        account.debit(amount);
+    public void debitBankAccount(TransactionDto transactionDto) {
+        BankAccount account = bankAccountRepository.findById(transactionDto.accountId())
+                .orElseThrow(() -> new BankAccountNotFoundException(transactionDto.accountId()));
+        account.debit(transactionDto.amount());
 
-        Transaction transaction = new Transaction();
-        transaction.setCreationDate(LocalDateTime.now());
-        transaction.setAmount(amount);
-        transaction.setTransactionType(TransactionType.DEBIT);
-        transaction.setEffective(isEffective);
-        transaction.setBankAccount(account);
+        Transaction transaction = new Transaction(transactionDto.amount(), TransactionType.DEBIT,
+                transactionDto.isEffective(), account);
 
         transactionRepository.save(transaction);
         bankAccountRepository.save(account);
 
-        if (isEffective) {
-            walletService.debitWalletBalance(account.getUser().getId(), amount);
+        if (transactionDto.isEffective()) {
+            walletService.debitWalletBalance(account.getUser().getId(), transactionDto.amount());
         }
     }
 
-    public void transferBetweenAccounts(Long fromAccountId, Long toAccountId, BigDecimal amount, boolean isEffective) {
-        BankAccount fromAccount = bankAccountRepository.findById(fromAccountId).orElseThrow();
-        BankAccount toAccount = bankAccountRepository.findById(toAccountId).orElseThrow();
+    public void transferBetweenAccounts(TransferDto transferDto) {
+        var fromAccount = bankAccountRepository.findById(transferDto.fromAccountId())
+                .orElseThrow(() -> new BankAccountNotFoundException(transferDto.fromAccountId()));
+        var toAccount = bankAccountRepository.findById(transferDto.toAccountId())
+                .orElseThrow(() -> new BankAccountNotFoundException(transferDto.toAccountId()));
 
-        fromAccount.debit(amount);
-        toAccount.credit(amount);
+        fromAccount.debit(transferDto.amount());
+        toAccount.credit(transferDto.amount());
 
-        Transaction debitTransaction = new Transaction();
-        debitTransaction.setCreationDate(LocalDateTime.now());
-        debitTransaction.setAmount(amount);
-        debitTransaction.setTransactionType(TransactionType.TRANSFER);
-        debitTransaction.setEffective(isEffective);
-        debitTransaction.setBankAccount(fromAccount);
-
-        Transaction creditTransaction = new Transaction();
-        creditTransaction.setCreationDate(LocalDateTime.now());
-        creditTransaction.setAmount(amount);
-        creditTransaction.setTransactionType(TransactionType.TRANSFER);
-        creditTransaction.setEffective(isEffective);
-        creditTransaction.setBankAccount(toAccount);
+        Transaction debitTransaction = new Transaction(transferDto.amount(), TransactionType.TRANSFER,
+                transferDto.isEffective(), fromAccount);
+        Transaction creditTransaction = new Transaction(transferDto.amount(), TransactionType.TRANSFER,
+                transferDto.isEffective(), toAccount);
 
         transactionRepository.save(debitTransaction);
         transactionRepository.save(creditTransaction);
 
         bankAccountRepository.save(fromAccount);
         bankAccountRepository.save(toAccount);
-
-        if (isEffective) {
-            walletService.debitWalletBalance(fromAccount.getUser().getId(), amount);
-            walletService.creditWalletBalance(toAccount.getUser().getId(), amount);
+        if (transferDto.isEffective()) {
+            walletService.debitWalletBalance(fromAccount.getUser().getId(), transferDto.amount());
+            walletService.creditWalletBalance(toAccount.getUser().getId(), transferDto.amount());
         }
     }
 

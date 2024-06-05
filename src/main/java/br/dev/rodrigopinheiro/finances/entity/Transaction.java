@@ -70,6 +70,26 @@ public class Transaction {
     public Transaction() {
     }
 
+    public Transaction(BigDecimal amount, TransactionType transactionType, boolean isEffective,
+            BankAccount bankAccount) {
+        this.amount = amount;
+        this.transactionType = transactionType;
+        this.isEffective = isEffective;
+        this.creationDate = LocalDateTime.now();
+        this.bankAccount = bankAccount;
+    }
+
+    public Transaction(BigDecimal amount, TransactionType transactionType, boolean isEffective,
+            CreditCardStatement cardStatement,
+            BankAccount bankAccount) {
+        this.amount = amount;
+        this.creditCardStatement = cardStatement;
+        this.transactionType = transactionType;
+        this.isEffective = isEffective;
+        this.creationDate = LocalDateTime.now();
+        this.bankAccount = bankAccount;
+    }
+
     public Transaction(String description, String note, BigDecimal amount, BigDecimal interest, BigDecimal discount,
             TransactionType transactionType, boolean isRecurrent, LocalDateTime dueDate, LocalDateTime creationDate,
             LocalDateTime effectivedDate, Category category) {
