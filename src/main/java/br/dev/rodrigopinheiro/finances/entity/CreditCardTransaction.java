@@ -45,6 +45,14 @@ public class CreditCardTransaction {
     this.installmentId = installmentId;
   }
 
+  public CreditCardTransaction(LocalDateTime date, BigDecimal amount, boolean isRefunded, String installmentId) {
+    this.date = date;
+    this.amount = amount;
+    this.isRefunded = isRefunded;
+    this.installmentId = installmentId;
+
+  }
+
   public Long getId() {
     return id;
   }

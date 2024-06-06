@@ -23,20 +23,19 @@ public class CreditCardStatement {
     private Long id;
 
     @Column(name = "month")
-    private String month;
+    private int month;
 
     @Column(name = "year")
-    private String year;
+    private int year;
 
     @Column(name = "payed")
     private boolean isPayed;
-    
+
     @Column(name = "amount_due")
     private BigDecimal amountDue;
 
     @Column(name = "amount_payed")
     private BigDecimal amountPayed;
-
 
     @Column(name = "effectived_date")
     private LocalDateTime effectivedDate;
@@ -54,9 +53,7 @@ public class CreditCardStatement {
     public CreditCardStatement() {
     }
 
-   
-    
-    public CreditCardStatement(String month, String year, boolean isPayed, BigDecimal amountDue,
+    public CreditCardStatement(int month, int year, boolean isPayed, BigDecimal amountDue,
             LocalDateTime effectivedDate, List<CreditCardTransaction> creditCardTransactions, CreditCard creditCard) {
         this.month = month;
         this.year = year;
@@ -67,32 +64,15 @@ public class CreditCardStatement {
         this.creditCard = creditCard;
     }
 
-
-
-
+    public CreditCardStatement(int month, int year, BigDecimal amountDue, CreditCard creditCard) {
+        this.month = month;
+        this.year = year;
+        this.amountDue = amountDue;
+        this.creditCard = creditCard;
+    }
 
     public Long getId() {
         return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getMonth() {
-        return month;
-    }
-
-    public void setMonth(String month) {
-        this.month = month;
-    }
-
-    public String getYear() {
-        return year;
-    }
-
-    public void setYear(String year) {
-        this.year = year;
     }
 
     public boolean isPayed() {
@@ -135,29 +115,39 @@ public class CreditCardStatement {
         this.creditCard = creditCard;
     }
 
-
     public BigDecimal getAmountDue() {
         return amountDue;
     }
-
 
     public void setAmountDue(BigDecimal amountDue) {
         this.amountDue = amountDue;
     }
 
-
-
-
-
     public BigDecimal getAmountPayed() {
         return amountPayed;
     }
 
-
-
-
-
     public void setAmountPayed(BigDecimal amountPayed) {
         this.amountPayed = amountPayed;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public int getMonth() {
+        return month;
+    }
+
+    public void setMonth(int month) {
+        this.month = month;
+    }
+
+    public int getYear() {
+        return year;
+    }
+
+    public void setYear(int year) {
+        this.year = year;
     }
 }

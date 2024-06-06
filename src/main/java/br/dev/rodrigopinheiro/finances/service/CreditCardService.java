@@ -10,6 +10,7 @@ import br.dev.rodrigopinheiro.finances.entity.Transaction;
 import br.dev.rodrigopinheiro.finances.entity.enums.TransactionType;
 import br.dev.rodrigopinheiro.finances.exception.BankAccountNotFoundException;
 import br.dev.rodrigopinheiro.finances.exception.CreditCardStatementNotFoundException;
+import br.dev.rodrigopinheiro.finances.exception.InsufficientBalanceException;
 import br.dev.rodrigopinheiro.finances.exception.StatementAlreadyPaidException;
 import br.dev.rodrigopinheiro.finances.repository.BankAccountRepository;
 import br.dev.rodrigopinheiro.finances.repository.CreditCardRepository;
@@ -56,11 +57,10 @@ public class CreditCardService {
         String installmentId = UUID.randomUUID().toString();
 
         for (int i = 0; i < installments; i++) {
-            CreditCardTransaction installment = new CreditCardTransaction();
-            installment.setDate(LocalDateTime.now().plusMonths(i));
-            installment.setAmount(amount.divide(BigDecimal.valueOf(installments)));
-            installment.setRefunded(false);
-            installment.setInstallmentId(installmentId);
+            CreditCardTransaction installment = new CreditCardTransaction(LocalDateTime.now().plusMonths(i),
+                    amount.divide(BigDecimal.valueOf(installments)),
+                    false, installmentId);
+
             installment.setStatement(findOrCreateStatement(creditCard, installment.getDate()));
 
             creditCardTransactionRepository.save(installment);
@@ -86,23 +86,19 @@ public class CreditCardService {
     }
 
     public void payCreditCardStatement(Long statementId, Long bankAccountId, BigDecimal amount) {
-        // To-Do exceptions
-        CreditCardStatement statement = creditCardStatementRepository.findById(statementId).orElseThrow();
+        CreditCardStatement statement = creditCardStatementRepository.findById(statementId)
+                .orElseThrow(() -> new CreditCardStatementNotFoundException(statementId));
 
-        BankAccount account = bankAccountRepository.findById(bankAccountId).orElseThrow();
+        BankAccount account = bankAccountRepository.findById(bankAccountId)
+                .orElseThrow(() -> new BankAccountNotFoundException(bankAccountId));
 
         if (account.isBalanceEqualOrGreaterThan(amount)) {
-            throw new RuntimeException("Insufficient funds in the bank account.");
+            throw new InsufficientBalanceException(amount);
         }
 
         account.debit(amount);
 
-        Transaction paymentTransaction = new Transaction();
-        paymentTransaction.setCreationDate(LocalDateTime.now());
-        paymentTransaction.setAmount(amount);
-        paymentTransaction.setTransactionType(TransactionType.DEBIT);
-        paymentTransaction.setEffective(true); // Payment is effective
-        paymentTransaction.setBankAccount(account);
+        Transaction paymentTransaction = new Transaction(amount, TransactionType.DEBIT, true, account);
 
         transactionRepository.save(paymentTransaction);
         bankAccountRepository.save(account);
@@ -147,12 +143,7 @@ public class CreditCardService {
         int year = date.getYear();
         return creditCardStatementRepository.findByCreditCardAndMonthAndYear(creditCard, month, year)
                 .orElseGet(() -> {
-                    CreditCardStatement statement = new CreditCardStatement();
-                    statement.setCreditCard(creditCard);
-                    statement.setMonth(month);
-                    statement.setYear(year);
-                    statement.setAmountDue(0.0);
-                    return creditCardStatementRepository.save(statement);
+                    return new CreditCardStatement(month, year, BigDecimal.ZERO, creditCard);
                 });
     }
 
