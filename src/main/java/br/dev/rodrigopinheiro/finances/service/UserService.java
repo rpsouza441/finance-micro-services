@@ -27,7 +27,7 @@ public class UserService {
     }
 
     public User findUser(Long id) {
-        return userRepository.findById(id).orElseThrow(() -> new NoSuchElementException("User not found for id: " + id));
+        return userRepository.findById(id).orElseThrow(() -> new UserNotFoundException(id));
     }
 
 
