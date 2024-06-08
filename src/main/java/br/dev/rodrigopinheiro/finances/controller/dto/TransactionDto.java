@@ -1,4 +1,4 @@
-package br.dev.rodrigopinheiro.finances.service.dto;
+package br.dev.rodrigopinheiro.finances.controller.dto;
 
 import java.math.BigDecimal;
 

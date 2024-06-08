@@ -8,8 +8,8 @@ import br.dev.rodrigopinheiro.finances.entity.enums.TransactionType;
 import br.dev.rodrigopinheiro.finances.exception.BankAccountNotFoundException;
 import br.dev.rodrigopinheiro.finances.repository.BankAccountRepository;
 import br.dev.rodrigopinheiro.finances.repository.TransactionRepository;
-import br.dev.rodrigopinheiro.finances.service.dto.TransactionDto;
-import br.dev.rodrigopinheiro.finances.service.dto.TransferDto;
+import br.dev.rodrigopinheiro.finances.controller.dto.TransactionDto;
+import br.dev.rodrigopinheiro.finances.controller.dto.TransferDto;
 
 @Service
 public class BankAccountService {
