@@ -1,5 +1,6 @@
 package br.dev.rodrigopinheiro.finances.service;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -7,6 +8,7 @@ import java.util.stream.Collectors;
 
 import br.dev.rodrigopinheiro.finances.controller.UserController;
 import br.dev.rodrigopinheiro.finances.controller.dto.UserDto;
+import br.dev.rodrigopinheiro.finances.entity.Wallet;
 import br.dev.rodrigopinheiro.finances.exception.FinanceException;
 import br.dev.rodrigopinheiro.finances.exception.UserNotFoundException;
 import org.springframework.dao.EmptyResultDataAccessException;
@@ -19,9 +21,11 @@ import br.dev.rodrigopinheiro.finances.repository.UserRepository;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final WalletService walletService;
 
-    public UserService(UserRepository userRepository) {
+    public UserService(UserRepository userRepository, WalletService walletService) {
         this.userRepository = userRepository;
+        this.walletService = walletService;
     }
 
     public User findUser(Long id) {
@@ -29,8 +33,14 @@ public class UserService {
     }
 
 
-    public UserDto createUser(User user) {
+    public UserDto create(User user) {
+
+        //To-Do conferir implementacao
+        var newWallet = new Wallet(BigDecimal.ZERO, user);
+        user.setWallet(newWallet);
         var userCreated = userRepository.save(user);
+        newWallet.setUser(userCreated);
+        walletService.create(newWallet);
         return new UserDto(userCreated.getName(), userCreated.getEmail(), userCreated.getPassword());
 
     }

@@ -27,7 +27,7 @@ public class User {
     @OneToMany(mappedBy = "user")
     private List<CreditCard> creditCards;
 
-    @OneToOne
+    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private Wallet wallet;
 
     public User() {

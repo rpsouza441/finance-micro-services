@@ -35,4 +35,9 @@ public class WalletService {
         return walletRepository.findByUserId(userId)
                 .orElseGet(() -> new Wallet(BigDecimal.ZERO, userService.findUser(userId)));
     }
+
+    public Wallet create(Wallet wallet) {
+        return walletRepository.save(wallet);
+
+    }
 }

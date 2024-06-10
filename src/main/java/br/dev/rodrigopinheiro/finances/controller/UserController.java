@@ -22,7 +22,7 @@ public class UserController {
     @PostMapping
     public ResponseEntity<UserDto> createUser(@RequestBody @Valid UserDto userDto) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(userService.createUser(userDto.toUser()));
+                .body(userService.create(userDto.toUser()));
     }
 
     @GetMapping
