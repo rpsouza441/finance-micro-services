@@ -19,11 +19,9 @@ import br.dev.rodrigopinheiro.finances.repository.UserRepository;
 public class UserService {
 
     private final UserRepository userRepository;
-    private final UserController user;
 
-    public UserService(UserRepository userRepository, UserController user) {
+    public UserService(UserRepository userRepository) {
         this.userRepository = userRepository;
-        this.user = user;
     }
 
     public User findUser(Long id) {
@@ -64,11 +62,11 @@ public class UserService {
 
     public UserDto update(Long id, UserDto userDto) {
         userRepository.findById(id).ifPresentOrElse((existingUser) -> {
-            var user = userDto.toUser();
-            user.setEmail(userDto.email());
-            user.setPassword(userDto.password());
-            user.setName(userDto.nome());
-            userRepository.save(user);
+         existingUser.setName(userDto.name());
+         existingUser.setEmail(userDto.email());
+         existingUser.setPassword(userDto.password());
+
+            userRepository.save(existingUser);
         }, () -> {
             throw new UserNotFoundException(id);
         });
