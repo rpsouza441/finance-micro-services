@@ -11,7 +11,6 @@ import jakarta.persistence.Table;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.Locale.Category;
 
 import br.dev.rodrigopinheiro.finances.entity.enums.TransactionType;
 
