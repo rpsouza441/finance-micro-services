@@ -35,7 +35,8 @@ public class UserService {
 
     public UserDto create(User user) {
 
-        //To-Do conferir implementacao
+        //TODO
+        // conferir implementacao de wallet com user
         var newWallet = new Wallet(BigDecimal.ZERO, user);
         user.setWallet(newWallet);
         var userCreated = userRepository.save(user);
