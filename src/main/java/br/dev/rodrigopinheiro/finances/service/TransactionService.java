@@ -7,9 +7,7 @@ import br.dev.rodrigopinheiro.finances.exception.FinanceException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Service;
 
-import br.dev.rodrigopinheiro.finances.entity.Transaction;
 import br.dev.rodrigopinheiro.finances.entity.enums.TransactionType;
-import br.dev.rodrigopinheiro.finances.exception.TransactionNotFoundException;
 import br.dev.rodrigopinheiro.finances.repository.TransactionRepository;
 
 import java.util.List;
@@ -20,10 +18,15 @@ public class TransactionService {
 
     private final WalletService walletService;
     private final TransactionRepository transactionRepository;
+    private final BankAccountService bankAccountService;
+    private final CategoryService categoryService;
 
-    public TransactionService(WalletService walletService, TransactionRepository transactionRepository) {
+    public TransactionService(WalletService walletService, TransactionRepository transactionRepository,
+                              BankAccountService bankAccountService, CategoryService categoryService) {
         this.walletService = walletService;
         this.transactionRepository = transactionRepository;
+        this.bankAccountService = bankAccountService;
+        this.categoryService = categoryService;
     }
 
     public void markTransactionAsEffective(Long transactionId) {
@@ -52,8 +55,7 @@ public class TransactionService {
 
     public TransactionDto create(Transaction transaction) {
         var transactionCreated = transactionRepository.save(transaction);
-        return new TransactionDto(transactionCreated.getBankAccount().getId(),
-                transactionCreated.getAmount(), transactionCreated.isEffective());
+        return TransactionDto.fromTransaction(transaction);
 
     }
 
@@ -62,16 +64,16 @@ public class TransactionService {
         List<Transaction> categories = transactionRepository.findAll();
 
         return categories.stream()
-                .map(transaction -> new TransactionDto(transaction.getBankAccount().getId(),
-                        transaction.getAmount(), transaction.isEffective()))
+                .map(TransactionDto::fromTransaction)
                 .collect(Collectors.toList());
     }
 
     public TransactionDto findById(Long id) {
         var transaction = transactionRepository.findById(id).orElseThrow(() -> new TransactionNotFoundException(id));
 
-        return new TransactionDto(transaction.getBankAccount().getId(),
-                transaction.getAmount(), transaction.isEffective());
+        return TransactionDto.fromTransaction(transaction);
+
+
     }
 
     public void delete(Long id) {
@@ -87,10 +89,24 @@ public class TransactionService {
     public TransactionDto update(Long id, TransactionDto transactionDto) {
         transactionRepository.findById(id).ifPresentOrElse((existingTransaction) -> {
 
-            //TODO
-            // Finalizar a DTO ou criar uma para cada ocasiao.
+            var bankAccount = bankAccountService.findByIdBankAccount(transactionDto.bankAccountId());
+            var category= categoryService.findCategory(transactionDto.categoryId());
+
+
+            if (!transactionDto.description().isEmpty()){existingTransaction.setDescription(transactionDto.description());}
+            if (!transactionDto.note().isEmpty()){existingTransaction.setDescription(transactionDto.note());}
             existingTransaction.setAmount(transactionDto.amount());
+            if (transactionDto.interest()!=null){existingTransaction.setInterest(transactionDto.interest());}
+            if (transactionDto.discount()!=null){existingTransaction.setDiscount(transactionDto.discount());}
+            existingTransaction.setTransactionType(transactionDto.transactionType());
+            existingTransaction.setRecurrent(transactionDto.isRecurrent());
             existingTransaction.setEffective(transactionDto.isEffective());
+            if(transactionDto.creationDate()!=null){existingTransaction.setCreationDate(transactionDto.creationDate());}
+            existingTransaction.setDueDate(transactionDto.dueDate());
+            if(transactionDto.effectivedDate()!= null){existingTransaction.setEffectivedDate(transactionDto.effectivedDate());}
+            existingTransaction.setBankAccount(bankAccount);
+            existingTransaction.setCategory(category);
+
 
             transactionRepository.save(existingTransaction);
         }, () -> {

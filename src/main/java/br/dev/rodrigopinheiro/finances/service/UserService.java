@@ -1,12 +1,9 @@
 package br.dev.rodrigopinheiro.finances.service;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 
-import br.dev.rodrigopinheiro.finances.controller.UserController;
 import br.dev.rodrigopinheiro.finances.controller.dto.UserDto;
 import br.dev.rodrigopinheiro.finances.entity.Wallet;
 import br.dev.rodrigopinheiro.finances.exception.FinanceException;

@@ -1,16 +1,13 @@
 package br.dev.rodrigopinheiro.finances.service;
 
-import br.dev.rodrigopinheiro.finances.controller.dto.CategoryDto;
 import br.dev.rodrigopinheiro.finances.controller.dto.CreditCardStatementDto;
 import br.dev.rodrigopinheiro.finances.entity.CreditCardStatement;
-import br.dev.rodrigopinheiro.finances.entity.Wallet;
 import br.dev.rodrigopinheiro.finances.exception.FinanceException;
 import br.dev.rodrigopinheiro.finances.exception.CreditCardStatementNotFoundException;
 import br.dev.rodrigopinheiro.finances.repository.CreditCardStatementRepository;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -19,9 +16,11 @@ public class CreditCardStatementService {
 
 
     private final CreditCardStatementRepository creditCardStatementRepository;
+    private final CreditCardService creditCardService;
 
-    public CreditCardStatementService(CreditCardStatementRepository creditCardStatementRepository) {
+    public CreditCardStatementService(CreditCardStatementRepository creditCardStatementRepository, CreditCardService creditCardService) {
         this.creditCardStatementRepository = creditCardStatementRepository;
+        this.creditCardService = creditCardService;
     }
 
     public CreditCardStatement findCreditCardStatement(Long id) {
@@ -30,9 +29,10 @@ public class CreditCardStatementService {
 
 
     public CreditCardStatementDto create(CreditCardStatement creditCardStatement) {
-        var categoryCreated = creditCardStatementRepository.save(creditCardStatement);
-        //TODO implementar a dto
-        return new CreditCardStatementDto();
+        var creditCardStatementCreated = creditCardStatementRepository.save(creditCardStatement);
+
+        return new CreditCardStatementDto(creditCardStatementCreated.getMonth(), creditCardStatementCreated.getYear(),
+                creditCardStatementCreated.getAmountDue(), creditCardStatementCreated.getCreditCard().getId());
     }
 
     public List<CreditCardStatementDto> findAll() {
@@ -40,15 +40,17 @@ public class CreditCardStatementService {
         List<CreditCardStatement> creditCardStatements = creditCardStatementRepository.findAll();
 
         return creditCardStatements.stream()
-                //TODO preencher dto
-                .map(creditCardStatement -> new CreditCardStatementDto())
+
+                .map(creditCardStatement -> new CreditCardStatementDto(creditCardStatement.getMonth(), creditCardStatement.getYear(),
+                        creditCardStatement.getAmountDue(), creditCardStatement.getCreditCard().getId()))
                 .collect(Collectors.toList());
     }
 
     public CreditCardStatementDto findById(Long id) {
         var creditCardStatement = creditCardStatementRepository.findById(id).orElseThrow(() -> new CreditCardStatementNotFoundException(id));
 
-        return new CreditCardStatementDto();
+        return new CreditCardStatementDto(creditCardStatement.getMonth(), creditCardStatement.getYear(), creditCardStatement.getAmountDue(),
+                creditCardStatement.getCreditCard().getId());
     }
 
     public void delete(Long id) {
@@ -63,7 +65,11 @@ public class CreditCardStatementService {
 
     public CreditCardStatementDto update(Long id, CreditCardStatementDto creditCardStatementDto) {
         creditCardStatementRepository.findById(id).ifPresentOrElse((existingCreditCardStatement) -> {
-          //    TODO atualizar a statement
+            var creditCard = creditCardService.findCreditCard(creditCardStatementDto.creditCardId());
+            existingCreditCardStatement.setMonth(creditCardStatementDto.month());
+            existingCreditCardStatement.setYear(creditCardStatementDto.year());
+            existingCreditCardStatement.setAmountDue(creditCardStatementDto.amountDue());
+            existingCreditCardStatement.setCreditCard(creditCard);
 
             creditCardStatementRepository.save(existingCreditCardStatement);
         }, () -> {

@@ -2,7 +2,6 @@ package br.dev.rodrigopinheiro.finances.service;
 
 import br.dev.rodrigopinheiro.finances.controller.dto.BankAccountDto;
 import br.dev.rodrigopinheiro.finances.exception.FinanceException;
-import br.dev.rodrigopinheiro.finances.exception.UserNotFoundException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Service;
 
@@ -15,7 +14,6 @@ import br.dev.rodrigopinheiro.finances.repository.TransactionRepository;
 import br.dev.rodrigopinheiro.finances.controller.dto.TransactionDto;
 import br.dev.rodrigopinheiro.finances.controller.dto.TransferDto;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -36,8 +34,8 @@ public class BankAccountService {
 
 
     public void creditBankAccount(TransactionDto transactionDto) {
-        BankAccount account = bankAccountRepository.findById(transactionDto.accountId())
-                .orElseThrow(() -> new BankAccountNotFoundException(transactionDto.accountId()));
+        BankAccount account = bankAccountRepository.findById(transactionDto.bankAccountId())
+                .orElseThrow(() -> new BankAccountNotFoundException(transactionDto.bankAccountId()));
         account.credit(transactionDto.amount());
 
         Transaction transaction = new Transaction(transactionDto.amount(), TransactionType.CREDIT,
@@ -52,8 +50,8 @@ public class BankAccountService {
     }
 
     public void debitBankAccount(TransactionDto transactionDto) {
-        BankAccount account = bankAccountRepository.findById(transactionDto.accountId())
-                .orElseThrow(() -> new BankAccountNotFoundException(transactionDto.accountId()));
+        BankAccount account = bankAccountRepository.findById(transactionDto.bankAccountId())
+                .orElseThrow(() -> new BankAccountNotFoundException(transactionDto.bankAccountId()));
         account.debit(transactionDto.amount());
 
         Transaction transaction = new Transaction(transactionDto.amount(), TransactionType.DEBIT,
@@ -108,6 +106,10 @@ public class BankAccountService {
     public BankAccountDto findById(Long id) {
         var bankAccount = bankAccountRepository.findById(id).orElseThrow(() -> new BankAccountNotFoundException(id));
         return new BankAccountDto(bankAccount.getBankName(), bankAccount.getBankBalance(), bankAccount.getUser().getId());
+
+    }
+    public BankAccount findByIdBankAccount(Long id) {
+        return bankAccountRepository.findById(id).orElseThrow(() -> new BankAccountNotFoundException(id));
 
     }
 

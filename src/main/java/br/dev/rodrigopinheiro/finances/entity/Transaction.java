@@ -89,25 +89,13 @@ public class Transaction {
         this.bankAccount = bankAccount;
     }
 
-    public Transaction(String description, String note, BigDecimal amount, BigDecimal interest, BigDecimal discount,
-            TransactionType transactionType, boolean isRecurrent, LocalDateTime dueDate, LocalDateTime creationDate,
-            LocalDateTime effectivedDate, Category category) {
-        this.description = description;
-        this.note = note;
-        this.amount = amount;
-        this.interest = interest;
-        this.discount = discount;
-        this.transactionType = transactionType;
-        this.isRecurrent = isRecurrent;
-        this.dueDate = dueDate;
-        this.creationDate = creationDate;
-        this.effectivedDate = effectivedDate;
-        this.category = category;
-    }
 
-    public Transaction(String description, String note, BigDecimal amount, BigDecimal interest, BigDecimal discount,
-            TransactionType transactionType, boolean isRecurrent, boolean isEffective, LocalDateTime dueDate,
-            LocalDateTime creationDate, LocalDateTime effectivedDate, Category category, BankAccount bankAccount) {
+
+
+    public Transaction(String description, String note, BigDecimal amount, BigDecimal interest,
+                       BigDecimal discount, TransactionType transactionType, boolean isRecurrent,
+                       boolean isEffective,  LocalDateTime creationDate, LocalDateTime dueDate,
+                       LocalDateTime effectivedDate, Category category, BankAccount bankAccount) {
         this.description = description;
         this.note = note;
         this.amount = amount;
