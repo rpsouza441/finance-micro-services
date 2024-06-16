@@ -62,19 +62,17 @@ public class CreditCardStatementService {
             throw new FinanceException();
         }
     }
-
     public CreditCardStatementDto update(Long id, CreditCardStatementDto creditCardStatementDto) {
-        creditCardStatementRepository.findById(id).ifPresentOrElse((existingCreditCardStatement) -> {
+        var updatedCreditCardStatement= creditCardStatementRepository.findById(id).map((existingCreditCardStatement) -> {
             var creditCard = creditCardService.findCreditCard(creditCardStatementDto.creditCardId());
             existingCreditCardStatement.setMonth(creditCardStatementDto.month());
             existingCreditCardStatement.setYear(creditCardStatementDto.year());
             existingCreditCardStatement.setAmountDue(creditCardStatementDto.amountDue());
             existingCreditCardStatement.setCreditCard(creditCard);
 
-            creditCardStatementRepository.save(existingCreditCardStatement);
-        }, () -> {
-            throw new CreditCardStatementNotFoundException(id);
-        });
-        return creditCardStatementDto;
+            return creditCardStatementRepository.save(existingCreditCardStatement);
+        }).orElseThrow( () ->
+             new CreditCardStatementNotFoundException(id));
+        return CreditCardStatementDto.fromCreditCardStatement(updatedCreditCardStatement);
     }
 }

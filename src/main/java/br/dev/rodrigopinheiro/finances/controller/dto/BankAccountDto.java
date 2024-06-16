@@ -13,9 +13,17 @@ public record BankAccountDto(
         @NotNull Long userId
 
 ) {
+
     public BankAccount toBankAccount() {
         var user = new User();
         user.setId(userId);
         return new BankAccount(bankName,bankBalance, user);
+    }
+    public static BankAccountDto fromBankAccount(BankAccount bankAcount) {
+        return  new BankAccountDto(
+                bankAcount.getBankName(),
+                bankAcount.getBankBalance(),
+                bankAcount.getUser().getId()
+        );
     }
 }

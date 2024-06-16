@@ -15,10 +15,19 @@ public record CreditCardStatementDto (
 
 ){
 
+
     public CreditCardStatement toCreditCardStatement(){
         var creditCard = new CreditCard();
         creditCard.setId(creditCardId);
         return new CreditCardStatement(month,year,amountDue, creditCard);
 
+    }
+    public static CreditCardStatementDto fromCreditCardStatement(CreditCardStatement creditCardStatement) {
+        return new CreditCardStatementDto(
+                creditCardStatement.getMonth(),
+                creditCardStatement.getYear(),
+                creditCardStatement.getAmountDue(),
+                creditCardStatement.getCreditCard().getId()
+        );
     }
 }

@@ -1,5 +1,6 @@
 package br.dev.rodrigopinheiro.finances.service;
 
+import br.dev.rodrigopinheiro.finances.controller.dto.WalletDto;
 import org.springframework.stereotype.Service;
 
 import br.dev.rodrigopinheiro.finances.entity.BankAccount;
@@ -67,7 +68,7 @@ public class CreditCardTransactionsService {
         }
 
         if (isEffective) {
-            walletService.debitWalletBalance(creditCard.getUser().getId(), amount);
+            walletService.debitWalletBalance(new WalletDto(amount,creditCard.getUser().getId()));
         }
     }
 
@@ -79,8 +80,8 @@ public class CreditCardTransactionsService {
             if (!installment.isRefunded()) {
                 installment.setRefunded(true);
                 creditCardTransactionRepository.save(installment);
-                walletService.creditWalletBalance(installment.getStatement().getCreditCard().getUser().getId(),
-                        installment.getAmount());
+                walletService.creditWalletBalance(new WalletDto(installment.getAmount(), installment.getStatement().getCreditCard().getUser().getId())
+                        );
             }
         }
     }
@@ -107,7 +108,7 @@ public class CreditCardTransactionsService {
         statement.setPayed(true); // Mark the statement as paid
         creditCardStatementRepository.save(statement);
 
-        walletService.debitWalletBalance(account.getUser().getId(), amount);
+        walletService.debitWalletBalance(new WalletDto( amount, account.getUser().getId()));
     }
 
     public void payCreditCardStatement(Long statementId, Long bankAccountId) {

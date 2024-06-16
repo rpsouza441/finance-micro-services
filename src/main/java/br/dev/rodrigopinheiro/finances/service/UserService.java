@@ -31,10 +31,11 @@ public class UserService {
     }
 
 
-    public UserDto create(User user) {
+    public UserDto create(UserDto userDto) {
 
         //TODO
         // conferir implementacao de wallet com user
+        var user= userDto.toUser();
         var newWallet = new Wallet(BigDecimal.ZERO, user);
         user.setWallet(newWallet);
         var userCreated = userRepository.save(user);
@@ -70,15 +71,13 @@ public class UserService {
     }
 
     public UserDto update(Long id, UserDto userDto) {
-        userRepository.findById(id).ifPresentOrElse((existingUser) -> {
-         existingUser.setName(userDto.name());
-         existingUser.setEmail(userDto.email());
-         existingUser.setPassword(userDto.password());
+        var updatedUser = userRepository.findById(id).map(existingUser -> {
+            existingUser.setName(userDto.name());
+            existingUser.setEmail(userDto.email());
+            existingUser.setPassword(userDto.password());
+            return userRepository.save(existingUser);
 
-            userRepository.save(existingUser);
-        }, () -> {
-            throw new UserNotFoundException(id);
-        });
-        return userDto;
+        }).orElseThrow(() -> new UserNotFoundException(id));
+        return userDto.fromUser(updatedUser);
     }
 }

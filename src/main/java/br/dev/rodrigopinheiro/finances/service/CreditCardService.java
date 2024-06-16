@@ -57,17 +57,16 @@ public class CreditCardService {
             throw new FinanceException();
         }
     }
-
     public CreditCardDto update(Long id, CreditCardDto creditCardDto) {
-        creditCardRepository.findById(id).ifPresentOrElse((existingCreditCard) -> {
+        var updatedCreditCard=creditCardRepository.findById(id).map((existingCreditCard) -> {
             existingCreditCard.setName(creditCardDto.name());
             existingCreditCard.setLimitAmount(creditCardDto.limitAmount());
             existingCreditCard.setClosingDay(creditCardDto.closingDay());
             existingCreditCard.setDueDay(creditCardDto.dueDay());
-            creditCardRepository.save(existingCreditCard);
-        }, () -> {
-            throw new CreditCardNotFoundException(id);
-        });
-        return creditCardDto;
+            return creditCardRepository.save(existingCreditCard);
+        }).orElseThrow( () ->
+             new CreditCardNotFoundException(id)
+        );
+        return CreditCardDto.fromCreditCard(updatedCreditCard);
     }
 }

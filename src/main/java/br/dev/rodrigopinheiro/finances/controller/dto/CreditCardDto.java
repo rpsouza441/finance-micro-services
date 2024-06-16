@@ -13,6 +13,15 @@ public record CreditCardDto(
         @NotNull LocalDate closingDay,
         @NotNull LocalDate dueDay
 ) {
+
     public CreditCard toCreditCard() {return  new CreditCard(name, limitAmount, closingDay, dueDay);
+    }
+    public static CreditCardDto fromCreditCard(CreditCard creditCard) {
+        return new CreditCardDto(
+                creditCard.getName(),
+                creditCard.getLimitAmount(),
+                creditCard.getClosingDay(),
+                creditCard.getDueDay()
+        );
     }
 }

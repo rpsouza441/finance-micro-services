@@ -1,6 +1,7 @@
 package br.dev.rodrigopinheiro.finances.service;
 
 import br.dev.rodrigopinheiro.finances.controller.dto.TransactionDto;
+import br.dev.rodrigopinheiro.finances.controller.dto.WalletDto;
 import br.dev.rodrigopinheiro.finances.entity.Transaction;
 import br.dev.rodrigopinheiro.finances.exception.TransactionNotFoundException;
 import br.dev.rodrigopinheiro.finances.exception.FinanceException;
@@ -36,13 +37,12 @@ public class TransactionService {
             transaction.setEffective(true);
             transactionRepository.save(transaction);
             if (transaction.getTransactionType() == TransactionType.CREDIT) {
-                walletService.creditWalletBalance(
-                        transaction.getBankAccount().getUser().getId(),
-                        transaction.getAmount());
+                walletService.creditWalletBalance(new WalletDto(transaction.getAmount(),
+                        transaction.getBankAccount().getUser().getId())
+                );
             } else {
-                walletService.debitWalletBalance(
-                        transaction.getBankAccount().getUser().getId(),
-                        transaction.getAmount());
+                walletService.debitWalletBalance(new WalletDto(transaction.getAmount(),
+                        transaction.getBankAccount().getUser().getId()));
             }
 
         }
@@ -87,32 +87,42 @@ public class TransactionService {
     }
 
     public TransactionDto update(Long id, TransactionDto transactionDto) {
-        transactionRepository.findById(id).ifPresentOrElse((existingTransaction) -> {
+        var updatedTransaction = transactionRepository.findById(id).map(existingTransaction -> {
 
             var bankAccount = bankAccountService.findByIdBankAccount(transactionDto.bankAccountId());
-            var category= categoryService.findCategory(transactionDto.categoryId());
+            var category = categoryService.findCategory(transactionDto.categoryId());
 
 
-            if (!transactionDto.description().isEmpty()){existingTransaction.setDescription(transactionDto.description());}
-            if (!transactionDto.note().isEmpty()){existingTransaction.setDescription(transactionDto.note());}
+            if (!transactionDto.description().isEmpty()) {
+                existingTransaction.setDescription(transactionDto.description());
+            }
+            if (!transactionDto.note().isEmpty()) {
+                existingTransaction.setDescription(transactionDto.note());
+            }
             existingTransaction.setAmount(transactionDto.amount());
-            if (transactionDto.interest()!=null){existingTransaction.setInterest(transactionDto.interest());}
-            if (transactionDto.discount()!=null){existingTransaction.setDiscount(transactionDto.discount());}
+            if (transactionDto.interest() != null) {
+                existingTransaction.setInterest(transactionDto.interest());
+            }
+            if (transactionDto.discount() != null) {
+                existingTransaction.setDiscount(transactionDto.discount());
+            }
             existingTransaction.setTransactionType(transactionDto.transactionType());
             existingTransaction.setRecurrent(transactionDto.isRecurrent());
             existingTransaction.setEffective(transactionDto.isEffective());
-            if(transactionDto.creationDate()!=null){existingTransaction.setCreationDate(transactionDto.creationDate());}
+            if (transactionDto.creationDate() != null) {
+                existingTransaction.setCreationDate(transactionDto.creationDate());
+            }
             existingTransaction.setDueDate(transactionDto.dueDate());
-            if(transactionDto.effectivedDate()!= null){existingTransaction.setEffectivedDate(transactionDto.effectivedDate());}
+            if (transactionDto.effectivedDate() != null) {
+                existingTransaction.setEffectivedDate(transactionDto.effectivedDate());
+            }
             existingTransaction.setBankAccount(bankAccount);
             existingTransaction.setCategory(category);
 
 
-            transactionRepository.save(existingTransaction);
-        }, () -> {
-            throw new TransactionNotFoundException(id);
-        });
-        return transactionDto;
+            return transactionRepository.save(existingTransaction);
+        }).orElseThrow(() -> new TransactionNotFoundException(id));
+        return TransactionDto.fromTransaction(updatedTransaction);
     }
 
 }

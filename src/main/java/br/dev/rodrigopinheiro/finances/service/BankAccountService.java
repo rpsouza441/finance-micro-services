@@ -1,6 +1,7 @@
 package br.dev.rodrigopinheiro.finances.service;
 
 import br.dev.rodrigopinheiro.finances.controller.dto.BankAccountDto;
+import br.dev.rodrigopinheiro.finances.controller.dto.WalletDto;
 import br.dev.rodrigopinheiro.finances.exception.FinanceException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Service;
@@ -45,7 +46,7 @@ public class BankAccountService {
         bankAccountRepository.save(account);
 
         if (transactionDto.isEffective()) {
-            walletService.creditWalletBalance(account.getUser().getId(), transactionDto.amount());
+            walletService.creditWalletBalance(new WalletDto( transactionDto.amount(), account.getUser().getId()));
         }
     }
 
@@ -61,7 +62,7 @@ public class BankAccountService {
         bankAccountRepository.save(account);
 
         if (transactionDto.isEffective()) {
-            walletService.debitWalletBalance(account.getUser().getId(), transactionDto.amount());
+            walletService.debitWalletBalance(new WalletDto( transactionDto.amount(), account.getUser().getId()));
         }
     }
 
@@ -85,8 +86,8 @@ public class BankAccountService {
         bankAccountRepository.save(fromAccount);
         bankAccountRepository.save(toAccount);
         if (transferDto.isEffective()) {
-            walletService.debitWalletBalance(fromAccount.getUser().getId(), transferDto.amount());
-            walletService.creditWalletBalance(toAccount.getUser().getId(), transferDto.amount());
+            walletService.debitWalletBalance(new WalletDto(transferDto.amount(), fromAccount.getUser().getId()));
+            walletService.creditWalletBalance(new WalletDto(transferDto.amount(), toAccount.getUser().getId()));
         }
     }
 
@@ -112,18 +113,15 @@ public class BankAccountService {
         return bankAccountRepository.findById(id).orElseThrow(() -> new BankAccountNotFoundException(id));
 
     }
-
     public BankAccountDto update(Long id, BankAccountDto bankAccountDto) {
-        bankAccountRepository.findById(id).ifPresentOrElse((existingBankAccount) -> {
+        var updatedBankAcount=bankAccountRepository.findById(id).map((existingBankAccount) -> {
             existingBankAccount.setBankName(bankAccountDto.bankName());
             existingBankAccount.setBankBalance(bankAccountDto.bankBalance());
             var user = userService.findUser(bankAccountDto.userId());
             existingBankAccount.setUser(user);
-            bankAccountRepository.save(existingBankAccount);
-        }, () -> {
-            throw new BankAccountNotFoundException(id);
-        });
-        return bankAccountDto;
+            return bankAccountRepository.save(existingBankAccount);
+        }).orElseThrow( () -> new BankAccountNotFoundException(id));
+        return BankAccountDto.fromBankAccount(updatedBankAcount);
     }
 
     public void delete(Long id) {

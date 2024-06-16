@@ -55,7 +55,6 @@ public class CategoryService {
             throw new FinanceException();
         }
     }
-
     public CategoryDto update(Long id, CategoryDto categoryDto) {
         categoryRepository.findById(id).ifPresentOrElse((existingCategory) -> {
             existingCategory.setName(categoryDto.name());
