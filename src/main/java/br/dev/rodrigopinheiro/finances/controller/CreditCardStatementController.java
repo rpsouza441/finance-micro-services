@@ -10,7 +10,8 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 
-@RestController("/credit-card-statement")
+@RestController
+@RequestMapping("/credit-card-statement")
 public class CreditCardStatementController {
 
     private final CreditCardStatementService creditCardStatementService;
@@ -19,28 +20,28 @@ public class CreditCardStatementController {
     }
 
     @PostMapping
-    public ResponseEntity<CreditCardStatementDto> createCreditCardStatement(@RequestBody @Valid CreditCardStatementDto creditCardStatementDto) {
+    public ResponseEntity<CreditCardStatementDto> create(@RequestBody @Valid CreditCardStatementDto creditCardStatementDto) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(creditCardStatementService.create(creditCardStatementDto.toCreditCardStatement()));
     }
 
     @GetMapping
-    public List<CreditCardStatementDto> getAllCreditCardStatements() {
+    public List<CreditCardStatementDto> getAll() {
         return creditCardStatementService.findAll();
     }
 
     @GetMapping("{id}")
-    public CreditCardStatementDto getCreditCardStatement(@PathVariable("id") Long id) {
+    public CreditCardStatementDto get(@PathVariable("id") Long id) {
         return creditCardStatementService.findById(id);
     }
 
     @PutMapping("{id}")
-    public ResponseEntity<CreditCardStatementDto> updateCreditCardStatement(@PathVariable("id") Long id, @RequestBody @Valid CreditCardStatementDto creditCardStatementDto) {
+    public ResponseEntity<CreditCardStatementDto> update(@PathVariable("id") Long id, @RequestBody @Valid CreditCardStatementDto creditCardStatementDto) {
         return ResponseEntity.status(HttpStatus.CREATED).body( creditCardStatementService.update(id, creditCardStatementDto));
     }
 
     @DeleteMapping("{id}")
-    public ResponseEntity<?> deleteCreditCardStatement(@PathVariable("id") Long id) {
+    public ResponseEntity<?> delete(@PathVariable("id") Long id) {
         creditCardStatementService.delete(id);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }

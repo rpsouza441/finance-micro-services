@@ -10,7 +10,8 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 
-@RestController("/transaction")
+@RestController
+@RequestMapping("/transaction")
 public class TransactionController {
 
     private final TransactionService transactionService;
@@ -19,28 +20,28 @@ public class TransactionController {
     }
 
     @PostMapping
-    public ResponseEntity<TransactionDto> createTransaction(@RequestBody @Valid TransactionDto transactionDto) {
+    public ResponseEntity<TransactionDto> create(@RequestBody @Valid TransactionDto transactionDto) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(transactionService.create(transactionDto.toTransaction()));
     }
 
     @GetMapping
-    public List<TransactionDto> getAllTransactions() {
+    public List<TransactionDto> getAll() {
         return transactionService.findAll();
     }
 
     @GetMapping("{id}")
-    public TransactionDto getTransaction(@PathVariable("id") Long id) {
+    public TransactionDto get(@PathVariable("id") Long id) {
         return transactionService.findById(id);
     }
 
     @PutMapping("{id}")
-    public ResponseEntity<TransactionDto> updateTransaction(@PathVariable("id") Long id, @RequestBody @Valid TransactionDto transactionDto) {
+    public ResponseEntity<TransactionDto> update(@PathVariable("id") Long id, @RequestBody @Valid TransactionDto transactionDto) {
         return ResponseEntity.status(HttpStatus.CREATED).body( transactionService.update(id, transactionDto));
     }
 
     @DeleteMapping("{id}")
-    public ResponseEntity<?> deleteTransaction(@PathVariable("id") Long id) {
+    public ResponseEntity<?> delete(@PathVariable("id") Long id) {
         transactionService.delete(id);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }

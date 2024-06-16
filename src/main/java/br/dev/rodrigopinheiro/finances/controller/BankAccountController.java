@@ -10,7 +10,8 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 
-@RestController("/bank-account")
+@RestController
+@RequestMapping("/bank-account")
 public class BankAccountController {
 
     private final BankAccountService bankAccountService;

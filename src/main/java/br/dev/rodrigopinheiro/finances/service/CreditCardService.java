@@ -17,7 +17,7 @@ public class CreditCardService {
 
     private final CreditCardRepository creditCardRepository;
 
-    public CreditCardService(CreditCardRepository creditCardRepository, CreditCardController creditCard) {
+    public CreditCardService(CreditCardRepository creditCardRepository) {
         this.creditCardRepository = creditCardRepository;
     }
 
@@ -37,7 +37,8 @@ public class CreditCardService {
 
         List<CreditCard> creditCards = creditCardRepository.findAll();
 
-        return creditCards.stream().map(creditCard -> new CreditCardDto(creditCard.getName(), creditCard.getLimitAmount(), creditCard.getClosingDay(), creditCard.getDueDay())).collect(Collectors.toList());
+        return creditCards.stream().map(creditCard -> new CreditCardDto(creditCard.getName(),
+                creditCard.getLimitAmount(), creditCard.getClosingDay(), creditCard.getDueDay())).collect(Collectors.toList());
     }
 
     public CreditCardDto findById(Long id) {

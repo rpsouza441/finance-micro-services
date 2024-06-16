@@ -11,7 +11,8 @@ import java.util.List;
 import br.dev.rodrigopinheiro.finances.service.UserService;
 
 
-@RestController("/user")
+@RestController
+@RequestMapping("/user")
 public class UserController {
 
     private final UserService userService;
@@ -20,28 +21,28 @@ public class UserController {
     }
 
     @PostMapping
-    public ResponseEntity<UserDto> createUser(@RequestBody @Valid UserDto userDto) {
+    public ResponseEntity<UserDto> create(@RequestBody @Valid UserDto userDto) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(userService.create(userDto.toUser()));
     }
 
     @GetMapping
-    public List<UserDto> getAllUsers() {
+    public List<UserDto> getAll() {
         return userService.findAll();
     }
 
     @GetMapping("{id}")
-    public UserDto getUser(@PathVariable("id") Long id) {
+    public UserDto get(@PathVariable("id") Long id) {
         return userService.findById(id);
     }
 
     @PutMapping("{id}")
-    public ResponseEntity<UserDto> updateUser(@PathVariable("id") Long id, @RequestBody @Valid UserDto userDto) {
+    public ResponseEntity<UserDto> update(@PathVariable("id") Long id, @RequestBody @Valid UserDto userDto) {
         return ResponseEntity.status(HttpStatus.CREATED).body( userService.update(id, userDto));
     }
 
     @DeleteMapping("{id}")
-    public ResponseEntity<?> deleteUser(@PathVariable("id") Long id) {
+    public ResponseEntity<?> delete(@PathVariable("id") Long id) {
         userService.delete(id);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }

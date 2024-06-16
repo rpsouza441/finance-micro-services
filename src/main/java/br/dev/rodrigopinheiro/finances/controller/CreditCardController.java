@@ -9,7 +9,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@RestController("/credit-card")
+@RestController
+@RequestMapping("/credit-card")
 public class CreditCardController {
 
     private final CreditCardService creditCardService;
@@ -20,28 +21,28 @@ public class CreditCardController {
 
 
     @PostMapping
-    public ResponseEntity<CreditCardDto> createCreditCard(@RequestBody @Valid CreditCardDto creditCardDto) {
+    public ResponseEntity<CreditCardDto> create(@RequestBody @Valid CreditCardDto creditCardDto) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(creditCardService.create(creditCardDto.toCreditCard()));
     }
 
     @GetMapping
-    public List<CreditCardDto> getAllCreditCards() {
+    public List<CreditCardDto> getAll() {
         return creditCardService.findAll();
     }
 
     @GetMapping("{id}")
-    public CreditCardDto getCreditCard(@PathVariable("id") Long id) {
+    public CreditCardDto get(@PathVariable("id") Long id) {
         return creditCardService.findById(id);
     }
 
     @PutMapping("{id}")
-    public ResponseEntity<CreditCardDto> updateCreditCard(@PathVariable("id") Long id, @RequestBody @Valid CreditCardDto creditCardDto) {
+    public ResponseEntity<CreditCardDto> update(@PathVariable("id") Long id, @RequestBody @Valid CreditCardDto creditCardDto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(creditCardService.update(id, creditCardDto));
     }
 
     @DeleteMapping("{id}")
-    public ResponseEntity<?> deleteCreditCard(@PathVariable("id") Long id) {
+    public ResponseEntity<?> delete(@PathVariable("id") Long id) {
         creditCardService.delete(id);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }

@@ -8,6 +8,7 @@ import br.dev.rodrigopinheiro.finances.controller.dto.UserDto;
 import br.dev.rodrigopinheiro.finances.entity.Wallet;
 import br.dev.rodrigopinheiro.finances.exception.FinanceException;
 import br.dev.rodrigopinheiro.finances.exception.UserNotFoundException;
+import br.dev.rodrigopinheiro.finances.repository.WalletRepository;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Service;
 
@@ -18,11 +19,11 @@ import br.dev.rodrigopinheiro.finances.repository.UserRepository;
 public class UserService {
 
     private final UserRepository userRepository;
-    private final WalletService walletService;
+    private final WalletRepository walletRepository;
 
-    public UserService(UserRepository userRepository, WalletService walletService) {
+    public UserService(UserRepository userRepository, WalletRepository walletRepository) {
         this.userRepository = userRepository;
-        this.walletService = walletService;
+        this.walletRepository = walletRepository;
     }
 
     public User findUser(Long id) {
@@ -38,7 +39,7 @@ public class UserService {
         user.setWallet(newWallet);
         var userCreated = userRepository.save(user);
         newWallet.setUser(userCreated);
-        walletService.create(newWallet);
+        walletRepository.save(newWallet);
         return new UserDto(userCreated.getName(), userCreated.getEmail(), userCreated.getPassword());
 
     }

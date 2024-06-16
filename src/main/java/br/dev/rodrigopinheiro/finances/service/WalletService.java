@@ -2,6 +2,8 @@ package br.dev.rodrigopinheiro.finances.service;
 
 import java.math.BigDecimal;
 
+import br.dev.rodrigopinheiro.finances.exception.UserNotFoundException;
+import br.dev.rodrigopinheiro.finances.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
 import br.dev.rodrigopinheiro.finances.entity.Wallet;
@@ -12,11 +14,11 @@ public class WalletService {
 
     private final WalletRepository walletRepository;
 
-    private final UserService userService;
+    private final UserRepository userRepository;
 
-    public WalletService(WalletRepository walletRepository, UserService userService) {
+    public WalletService(WalletRepository walletRepository, UserRepository userRepository) {
         this.walletRepository = walletRepository;
-        this.userService = userService;
+        this.userRepository = userRepository;
     }
 
     protected void creditWalletBalance(Long userId, BigDecimal amount) {
@@ -33,7 +35,8 @@ public class WalletService {
 
     private Wallet getWalletOrCreate(Long userId) {
         return walletRepository.findByUserId(userId)
-                .orElseGet(() -> new Wallet(BigDecimal.ZERO, userService.findUser(userId)));
+                .orElseGet(() -> new Wallet(BigDecimal.ZERO,
+                        userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId))));
     }
 
     public Wallet create(Wallet wallet) {
