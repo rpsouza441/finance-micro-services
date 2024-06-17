@@ -12,14 +12,14 @@ import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
 
 public record TransactionDto(
-        String description,
+        @NonNull String description,
         String note,
         @NonNull @DecimalMin("0.01") BigDecimal amount,
         BigDecimal interest,
         BigDecimal discount,
         @NonNull TransactionType transactionType,
-        boolean isRecurrent,
-        boolean isEffective,
+        @NonNull boolean isRecurrent,
+        @NonNull boolean isEffective,
         LocalDateTime creationDate,
         @NotNull LocalDateTime dueDate,
         LocalDateTime effectivedDate,
@@ -38,7 +38,6 @@ public record TransactionDto(
                 isRecurrent, isEffective, creationDate, dueDate, effectivedDate, category, bankAccount
         );
     }
-
 
 
     public static TransactionDto fromTransaction(Transaction transaction) {

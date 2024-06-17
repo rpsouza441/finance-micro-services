@@ -15,6 +15,7 @@ import br.dev.rodrigopinheiro.finances.repository.TransactionRepository;
 import br.dev.rodrigopinheiro.finances.controller.dto.TransactionDto;
 import br.dev.rodrigopinheiro.finances.controller.dto.TransferDto;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -34,62 +35,18 @@ public class BankAccountService {
     }
 
 
-    public void creditBankAccount(TransactionDto transactionDto) {
-        BankAccount account = bankAccountRepository.findById(transactionDto.bankAccountId())
-                .orElseThrow(() -> new BankAccountNotFoundException(transactionDto.bankAccountId()));
-        account.credit(transactionDto.amount());
-
-        Transaction transaction = new Transaction(transactionDto.amount(), TransactionType.CREDIT,
-                transactionDto.isEffective(), account);
-
-        transactionRepository.save(transaction);
-        bankAccountRepository.save(account);
-
-        if (transactionDto.isEffective()) {
-            walletService.creditWalletBalance(new WalletDto( transactionDto.amount(), account.getUser().getId()));
-        }
+    public void debit(BankAccount bankAccount, BigDecimal value) {
+        BankAccount renewedBankAccount = findBankAccountById(bankAccount.getId());
+        renewedBankAccount.debit(value);
+        bankAccountRepository.save(renewedBankAccount);
     }
 
-    public void debitBankAccount(TransactionDto transactionDto) {
-        BankAccount account = bankAccountRepository.findById(transactionDto.bankAccountId())
-                .orElseThrow(() -> new BankAccountNotFoundException(transactionDto.bankAccountId()));
-        account.debit(transactionDto.amount());
-
-        Transaction transaction = new Transaction(transactionDto.amount(), TransactionType.DEBIT,
-                transactionDto.isEffective(), account);
-
-        transactionRepository.save(transaction);
-        bankAccountRepository.save(account);
-
-        if (transactionDto.isEffective()) {
-            walletService.debitWalletBalance(new WalletDto( transactionDto.amount(), account.getUser().getId()));
-        }
+    public void credit(BankAccount bankAccount, BigDecimal value) {
+        BankAccount renewedBankAccount = findBankAccountById(bankAccount.getId());
+        renewedBankAccount.credit(value);
+        bankAccountRepository.save(renewedBankAccount);
     }
 
-    public void transferBetweenAccounts(TransferDto transferDto) {
-        var fromAccount = bankAccountRepository.findById(transferDto.fromAccountId())
-                .orElseThrow(() -> new BankAccountNotFoundException(transferDto.fromAccountId()));
-        var toAccount = bankAccountRepository.findById(transferDto.toAccountId())
-                .orElseThrow(() -> new BankAccountNotFoundException(transferDto.toAccountId()));
-
-        fromAccount.debit(transferDto.amount());
-        toAccount.credit(transferDto.amount());
-
-        Transaction debitTransaction = new Transaction(transferDto.amount(), TransactionType.TRANSFER,
-                transferDto.isEffective(), fromAccount);
-        Transaction creditTransaction = new Transaction(transferDto.amount(), TransactionType.TRANSFER,
-                transferDto.isEffective(), toAccount);
-
-        transactionRepository.save(debitTransaction);
-        transactionRepository.save(creditTransaction);
-
-        bankAccountRepository.save(fromAccount);
-        bankAccountRepository.save(toAccount);
-        if (transferDto.isEffective()) {
-            walletService.debitWalletBalance(new WalletDto(transferDto.amount(), fromAccount.getUser().getId()));
-            walletService.creditWalletBalance(new WalletDto(transferDto.amount(), toAccount.getUser().getId()));
-        }
-    }
 
     public BankAccountDto create(BankAccount bankAccount) {
         var bankAccountCreated = bankAccountRepository.save(bankAccount);
@@ -104,23 +61,30 @@ public class BankAccountService {
 
     }
 
-    public BankAccountDto findById(Long id) {
+    public BankAccountDto findBankAccountDtoById(Long id) {
         var bankAccount = bankAccountRepository.findById(id).orElseThrow(() -> new BankAccountNotFoundException(id));
         return new BankAccountDto(bankAccount.getBankName(), bankAccount.getBankBalance(), bankAccount.getUser().getId());
 
     }
+
+    public BankAccount findBankAccountById(Long id) {
+        return bankAccountRepository.findById(id).orElseThrow(() -> new BankAccountNotFoundException(id));
+
+    }
+
     public BankAccount findByIdBankAccount(Long id) {
         return bankAccountRepository.findById(id).orElseThrow(() -> new BankAccountNotFoundException(id));
 
     }
+
     public BankAccountDto update(Long id, BankAccountDto bankAccountDto) {
-        var updatedBankAcount=bankAccountRepository.findById(id).map((existingBankAccount) -> {
+        var updatedBankAcount = bankAccountRepository.findById(id).map((existingBankAccount) -> {
             existingBankAccount.setBankName(bankAccountDto.bankName());
             existingBankAccount.setBankBalance(bankAccountDto.bankBalance());
             var user = userService.findUser(bankAccountDto.userId());
             existingBankAccount.setUser(user);
             return bankAccountRepository.save(existingBankAccount);
-        }).orElseThrow( () -> new BankAccountNotFoundException(id));
+        }).orElseThrow(() -> new BankAccountNotFoundException(id));
         return BankAccountDto.fromBankAccount(updatedBankAcount);
     }
 
