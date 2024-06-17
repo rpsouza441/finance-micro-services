@@ -12,4 +12,6 @@ public record TransferDto(
     @NotNull boolean isEffective
 
 ) {
+
+
 }

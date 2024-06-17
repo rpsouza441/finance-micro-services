@@ -53,6 +53,13 @@ public class CreditCardTransaction {
 
   }
 
+  public CreditCardTransaction(LocalDateTime date, BigDecimal amount, String installmentId, CreditCardStatement statement) {
+    this.date = date;
+    this.amount = amount;
+    this.installmentId = installmentId;
+    this.statement = statement;
+  }
+
   public Long getId() {
     return id;
   }

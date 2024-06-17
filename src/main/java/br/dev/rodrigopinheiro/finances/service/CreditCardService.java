@@ -26,8 +26,9 @@ public class CreditCardService {
     }
 
 
-    public CreditCardDto create(CreditCard creditCard) {
-        var creditCardCreated = creditCardRepository.save(creditCard);
+    public CreditCardDto create(CreditCardDto creditCardDto) {
+
+        var creditCardCreated = creditCardRepository.save(creditCardDto.toCreditCard());
         return new CreditCardDto(creditCardCreated.getName(), creditCardCreated.getLimitAmount(),
                 creditCardCreated.getClosingDay(), creditCardCreated.getDueDay());
 
