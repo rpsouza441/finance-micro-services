@@ -74,10 +74,18 @@ public class CreditCardTransactionsService {
                 .findByInstallmentId(installmentId).orElseThrow(() -> new TransactionInstallMentNotFoundException(installmentId));
         for (CreditCardTransaction installment : creditCardTransactions) {
             if (!installment.isRefunded()) {
-                //TODO create credit transaction
+
+                //Busca os bancos que foram debitadas para dar o credito
+                List<BankAccount> bankAccounts = creditCardTransactionRepository.findBankAccountsByInstallmentId(installment.getStatement().getId());
+                for (BankAccount bankAccount : bankAccounts) {
+                    bankAccount.credit(installment.getAmount());
+                    bankAccountRepository.save(bankAccount);
+                }
+
                 installment.setRefunded(true);
                 creditCardTransactionRepository.save(installment);
-                walletService.creditWalletBalance(new WalletDto(installment.getAmount(), installment.getStatement().getCreditCard().getUser().getId())
+                walletService.creditWalletBalance(new WalletDto(installment.getAmount(),
+                        installment.getStatement().getCreditCard().getUser().getId())
                 );
             }
         }
@@ -123,6 +131,7 @@ public class CreditCardTransactionsService {
                     return new CreditCardStatement(month, year, BigDecimal.ZERO, creditCard);
                 });
     }
+
 
     public CreditCardTransactionDto create(CreditCardTransactionDto creditCardTransactionDto) {
         var CreditCardTransactionCreated = creditCardTransactionRepository.save(creditCardTransactionDto.toCreditCardTransaction());
