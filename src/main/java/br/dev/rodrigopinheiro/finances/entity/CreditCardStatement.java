@@ -54,7 +54,7 @@ public class CreditCardStatement {
     }
 
     public CreditCardStatement(int month, int year, boolean isPayed, BigDecimal amountDue,
-            LocalDateTime effectivedDate, List<CreditCardTransaction> creditCardTransactions, CreditCard creditCard) {
+                               LocalDateTime effectivedDate, List<CreditCardTransaction> creditCardTransactions, CreditCard creditCard) {
         this.month = month;
         this.year = year;
         this.isPayed = isPayed;
@@ -149,5 +149,9 @@ public class CreditCardStatement {
 
     public void setYear(int year) {
         this.year = year;
+    }
+
+    public void addAmountDue(BigDecimal amount) {
+        this.amountDue = this.amountDue.add(amount);
     }
 }

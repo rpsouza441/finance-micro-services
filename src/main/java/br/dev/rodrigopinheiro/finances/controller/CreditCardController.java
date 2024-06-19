@@ -23,7 +23,7 @@ public class CreditCardController {
     @PostMapping
     public ResponseEntity<CreditCardDto> create(@RequestBody @Valid CreditCardDto creditCardDto) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(creditCardService.create(creditCardDto.toCreditCard()));
+                .body(creditCardService.create(creditCardDto));
     }
 
     @GetMapping

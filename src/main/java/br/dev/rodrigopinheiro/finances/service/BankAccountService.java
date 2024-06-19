@@ -1,19 +1,14 @@
 package br.dev.rodrigopinheiro.finances.service;
 
 import br.dev.rodrigopinheiro.finances.controller.dto.BankAccountDto;
-import br.dev.rodrigopinheiro.finances.controller.dto.WalletDto;
 import br.dev.rodrigopinheiro.finances.exception.FinanceException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Service;
 
 import br.dev.rodrigopinheiro.finances.entity.BankAccount;
-import br.dev.rodrigopinheiro.finances.entity.Transaction;
-import br.dev.rodrigopinheiro.finances.entity.enums.TransactionType;
 import br.dev.rodrigopinheiro.finances.exception.BankAccountNotFoundException;
 import br.dev.rodrigopinheiro.finances.repository.BankAccountRepository;
 import br.dev.rodrigopinheiro.finances.repository.TransactionRepository;
-import br.dev.rodrigopinheiro.finances.controller.dto.TransactionDto;
-import br.dev.rodrigopinheiro.finances.controller.dto.TransferDto;
 
 import java.math.BigDecimal;
 import java.util.List;

@@ -1,18 +1,21 @@
 package br.dev.rodrigopinheiro.finances.service;
 
 import br.dev.rodrigopinheiro.finances.controller.dto.TransactionDto;
+import br.dev.rodrigopinheiro.finances.controller.dto.TransferTransactionDto;
 import br.dev.rodrigopinheiro.finances.controller.dto.WalletDto;
 import br.dev.rodrigopinheiro.finances.entity.BankAccount;
+import br.dev.rodrigopinheiro.finances.entity.Category;
 import br.dev.rodrigopinheiro.finances.entity.Transaction;
-import br.dev.rodrigopinheiro.finances.exception.InsufficientBalanceException;
-import br.dev.rodrigopinheiro.finances.exception.TransactionNotFoundException;
-import br.dev.rodrigopinheiro.finances.exception.FinanceException;
+import br.dev.rodrigopinheiro.finances.entity.enums.CategoryType;
+import br.dev.rodrigopinheiro.finances.exception.*;
+import br.dev.rodrigopinheiro.finances.repository.CategoryRepository;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Service;
 
 import br.dev.rodrigopinheiro.finances.entity.enums.TransactionType;
 import br.dev.rodrigopinheiro.finances.repository.TransactionRepository;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -23,66 +26,96 @@ public class TransactionService {
     private final TransactionRepository transactionRepository;
     private final BankAccountService bankAccountService;
     private final CategoryService categoryService;
+    private final CategoryRepository categoryRepository;
 
     public TransactionService(WalletService walletService, TransactionRepository transactionRepository,
-                              BankAccountService bankAccountService, CategoryService categoryService) {
+                              BankAccountService bankAccountService, CategoryService categoryService, CategoryRepository categoryRepository) {
         this.walletService = walletService;
         this.transactionRepository = transactionRepository;
         this.bankAccountService = bankAccountService;
         this.categoryService = categoryService;
+        this.categoryRepository = categoryRepository;
     }
 
     // Método para realizar débito em uma transação
-    public void debitTransaction(TransactionDto transactionDto) {
+    public TransactionDto debitTransaction(TransactionDto transactionDto) {
         BankAccount bankAccount = bankAccountService.findBankAccountById(transactionDto.bankAccountId());
 
         // Verifica se há saldo suficiente na conta bancária
         if (bankAccount.isBalanceEqualOrGreaterThan(transactionDto.amount())) {
             checkIsEffectivedAndCreditOrDebitWalletBankAccount(transactionDto, bankAccount);
             // Persiste a transação com o saldo debitado
-            transactionRepository.save(transactionDto.toTransaction());
+            return TransactionDto.fromTransaction(
+                    transactionRepository.save(transactionDto.toTransaction())
+            );
         } else {
             throw new InsufficientBalanceException(transactionDto.amount());
         }
+
     }
 
     // Método para realizar crédito em uma transação
-    public void creditTransaction(TransactionDto transactionDto) {
+    public TransactionDto creditTransaction(TransactionDto transactionDto) {
         BankAccount bankAccount = bankAccountService.findBankAccountById(transactionDto.bankAccountId());
         checkIsEffectivedAndCreditOrDebitWalletBankAccount(transactionDto, bankAccount);
         // Persiste a transação com o saldo creditado
-        transactionRepository.save(transactionDto.toTransaction());
+        return TransactionDto.fromTransaction(
+                transactionRepository.save(transactionDto.toTransaction())
+        );
     }
 
 
     // Método para transferir entre contas
-    public void transferBetweenAccounts(TransactionDto debitTransactionDto, TransactionDto creditTransactionDto) {
+    public List<TransactionDto> transferBetweenAccounts(TransferTransactionDto transferTransactionDto) {
         // Realiza transferência entre contas
-        BankAccount debitAccount = bankAccountService.findBankAccountById(debitTransactionDto.bankAccountId());
-        BankAccount creditAccount = bankAccountService.findBankAccountById(creditTransactionDto.bankAccountId());
+        BankAccount debitAccount = bankAccountService.findBankAccountById(transferTransactionDto.fromBankAccountId());
+        BankAccount creditAccount = bankAccountService.findBankAccountById(transferTransactionDto.toBankAccountId());
+
+        List<TransactionDto> transactionDtos = new ArrayList<>();
 
         // Verifica se há saldo suficiente na conta de débito
-        if (debitAccount.isBalanceEqualOrGreaterThan(debitTransactionDto.amount())) {
+        if (debitAccount.isBalanceEqualOrGreaterThan(transferTransactionDto.amount())) {
 
-            checkIsEffectivedAndCreditOrDebitWalletBankAccount(creditTransactionDto, creditAccount);
-            checkIsEffectivedAndCreditOrDebitWalletBankAccount(debitTransactionDto, debitAccount);
-            // Persiste ambas as transações
-            transactionRepository.save(debitTransactionDto.toTransaction());
-            transactionRepository.save(creditTransactionDto.toTransaction());
+            var category = categoryRepository.findByName(
+                    CategoryType.TRANSFER.name()).orElseThrow(CategoryNotFoundException::new);
+            var debitTransaction = createTransferTransaction(transferTransactionDto, category, debitAccount);
+            var creditTransaction = createTransferTransaction(transferTransactionDto, category, creditAccount);
+
+            if (transferTransactionDto.isEffective()) {
+                debitAccount.debit(transferTransactionDto.amount());
+                creditAccount.credit(transferTransactionDto.amount());
+            }
+
+            // Persiste ambas as transações e adiciona à lista
+            transactionDtos.add(TransactionDto.fromTransaction(transactionRepository.save(debitTransaction)));
+            transactionDtos.add(TransactionDto.fromTransaction(transactionRepository.save(creditTransaction)));
         } else {
-            throw new InsufficientBalanceException(debitTransactionDto.amount());
+            throw new InsufficientBalanceException(transferTransactionDto.amount());
         }
+        return transactionDtos;
+    }
+
+    private static Transaction createTransferTransaction(TransferTransactionDto transferTransactionDto, Category category, BankAccount account) {
+        return new Transaction(
+                transferTransactionDto.description(),
+                transferTransactionDto.note(),
+                transferTransactionDto.amount(),
+                TransactionType.TRANSFER,
+                transferTransactionDto.isRecurrent(),
+                transferTransactionDto.isEffective(),
+                transferTransactionDto.creationDate(),
+                category,
+                account);
     }
 
 
-    public void markTransactionAsEffective(Long transactionId) {
+    public TransactionDto markTransactionAsEffective(Long transactionId) {
         Transaction transaction = transactionRepository.findById(transactionId)
                 .orElseThrow(() -> new TransactionNotFoundException(transactionId));
         BankAccount bankAccount = bankAccountService.findBankAccountById(transaction.getBankAccount().getId());
 
         if (!transaction.isEffective()) {
             transaction.setEffective(true);
-            transactionRepository.save(transaction);
             switch (transaction.getTransactionType()) {
                 case DEBIT:
                     bankAccountService.debit(bankAccount, transaction.getAmount());
@@ -92,16 +125,11 @@ public class TransactionService {
                     walletService.creditWalletBalance(new WalletDto(transaction.getAmount(), bankAccount.getUser().getId()));
 
             }
-
-
+            return TransactionDto.fromTransaction(transactionRepository.save(transaction));
+        } else {
+            throw new TransactionAlreadyEffectiveException();
         }
     }
-
-
-    public Transaction findTransaction(Long id) {
-        return transactionRepository.findById(id).orElseThrow(() -> new TransactionNotFoundException(id));
-    }
-
 
     public List<TransactionDto> findAll() {
 

@@ -25,9 +25,9 @@ public class CategoryService {
     }
 
 
-    public CategoryDto create(Category category) {
-        var categoryCreated = categoryRepository.save(category);
-        return new CategoryDto(categoryCreated.getName());
+    public CategoryDto create(CategoryDto categoryDto) {
+        var categoryCreated = categoryRepository.save(categoryDto.toCategory());
+        return CategoryDto.fromCategory(categoryCreated);
 
     }
 
@@ -55,6 +55,7 @@ public class CategoryService {
             throw new FinanceException();
         }
     }
+
     public CategoryDto update(Long id, CategoryDto categoryDto) {
         categoryRepository.findById(id).ifPresentOrElse((existingCategory) -> {
             existingCategory.setName(categoryDto.name());

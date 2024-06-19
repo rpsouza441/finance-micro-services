@@ -16,6 +16,7 @@ import java.util.List;
 public class CategoryController {
 
     private final CategoryService categoryService;
+
     public CategoryController(CategoryService categoryService) {
         this.categoryService = categoryService;
     }
@@ -23,7 +24,7 @@ public class CategoryController {
     @PostMapping
     public ResponseEntity<CategoryDto> create(@RequestBody @Valid CategoryDto categoryDto) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(categoryService.create(new Category(categoryDto.name())));
+                .body(categoryService.create(categoryDto));
     }
 
     @GetMapping
@@ -38,7 +39,7 @@ public class CategoryController {
 
     @PutMapping("{id}")
     public ResponseEntity<CategoryDto> update(@PathVariable("id") Long id, @RequestBody @Valid CategoryDto categoryDto) {
-        return ResponseEntity.status(HttpStatus.CREATED).body( categoryService.update(id, categoryDto));
+        return ResponseEntity.status(HttpStatus.CREATED).body(categoryService.update(id, categoryDto));
     }
 
     @DeleteMapping("{id}")

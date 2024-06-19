@@ -1,27 +1,20 @@
 package br.dev.rodrigopinheiro.finances.service;
 
-import br.dev.rodrigopinheiro.finances.controller.dto.CreditCardTransactionDto;
-import br.dev.rodrigopinheiro.finances.controller.dto.InstallmentDto;
-import br.dev.rodrigopinheiro.finances.controller.dto.WalletDto;
+import br.dev.rodrigopinheiro.finances.controller.dto.*;
+import br.dev.rodrigopinheiro.finances.entity.CreditCard;
 import br.dev.rodrigopinheiro.finances.exception.*;
+import br.dev.rodrigopinheiro.finances.repository.*;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Service;
 
 import br.dev.rodrigopinheiro.finances.entity.BankAccount;
-import br.dev.rodrigopinheiro.finances.entity.CreditCard;
 import br.dev.rodrigopinheiro.finances.entity.CreditCardStatement;
 import br.dev.rodrigopinheiro.finances.entity.CreditCardTransaction;
-import br.dev.rodrigopinheiro.finances.entity.Transaction;
-import br.dev.rodrigopinheiro.finances.entity.enums.TransactionType;
-import br.dev.rodrigopinheiro.finances.repository.BankAccountRepository;
-import br.dev.rodrigopinheiro.finances.repository.CreditCardRepository;
-import br.dev.rodrigopinheiro.finances.repository.CreditCardStatementRepository;
-import br.dev.rodrigopinheiro.finances.repository.CreditCardTransactionRepository;
-import br.dev.rodrigopinheiro.finances.repository.TransactionRepository;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -33,47 +26,84 @@ public class CreditCardTransactionService {
 
     private final CreditCardRepository creditCardRepository;
 
-    private final TransactionRepository transactionRepository;
 
     private final CreditCardTransactionRepository creditCardTransactionRepository;
 
     private final CreditCardStatementRepository creditCardStatementRepository;
 
     private final WalletService walletService;
+    private final CreditCardStatementService creditCardStatementService;
+    private final CategoryRepository categoryRepository;
 
     public CreditCardTransactionService(BankAccountRepository bankAccountRepository, CreditCardRepository creditCardRepository,
-                                        TransactionRepository transactionRepository,
                                         CreditCardTransactionRepository creditCardTransactionRepository,
-                                        CreditCardStatementRepository creditCardStatementRepository, WalletService walletService) {
+                                        CreditCardStatementRepository creditCardStatementRepository, WalletService walletService, CreditCardStatementService creditCardStatementService, CategoryRepository categoryRepository) {
         this.bankAccountRepository = bankAccountRepository;
         this.creditCardRepository = creditCardRepository;
-        this.transactionRepository = transactionRepository;
         this.creditCardTransactionRepository = creditCardTransactionRepository;
         this.creditCardStatementRepository = creditCardStatementRepository;
         this.walletService = walletService;
+        this.creditCardStatementService = creditCardStatementService;
+        this.categoryRepository = categoryRepository;
     }
 
-    public void addCreditCardTransaction(InstallmentDto installmentDto) {
-        var creditCard = creditCardRepository.findById(installmentDto.cardId()).orElseThrow(() ->
-                new CreditCardNotFoundException(installmentDto.cardId()));
+    //TODO
+    public List<CreditCardTransactionDto> addCreditCardTransaction(InstallmentDto installmentDto) {
+        var creditCard = creditCardRepository.findById(installmentDto.creditCardId()).orElseThrow(() ->
+                new CreditCardNotFoundException(installmentDto.creditCardId()));
+        var statement = creditCardStatementRepository.findById(installmentDto.statementId()).orElseThrow(() ->
+                new CreditCardStatementNotFoundException(installmentDto.statementId()));
+
+        var category = categoryRepository.findByName(installmentDto.category().name()).orElseThrow(CategoryNotFoundException::new);
 
         String installmentId = UUID.randomUUID().toString();
 
-        for (int i = 0; i < installmentDto.installments(); i++) {
-            var installment = new CreditCardTransaction(LocalDateTime.now().plusMonths(i),
-                    installmentDto.amount().divide(BigDecimal.valueOf(installmentDto.installments()), 2, RoundingMode.HALF_UP),
-                    false, installmentId);
-            installment.setStatement(findOrCreateStatement(creditCard, installment.getDate()));
-            creditCardTransactionRepository.save(installment);
-        }
+        List<CreditCardTransactionDto> creditCardTransactionDtos = new ArrayList<>();
 
+        for (int i = 0; i < installmentDto.installments(); i++) {
+            // Criando o LocalDateTime com o ano e mês fornecidos,
+            // o dia é o primeiro do mês e o tempo é meia-noite
+            LocalDateTime dateTime = LocalDateTime.of(statement.getYear(), statement.getMonth(), 1, 0, 0);
+
+            var installment = new CreditCardTransaction(
+                    dateTime.plusMonths(i),
+                    installmentDto.amount().divide(BigDecimal.valueOf(installmentDto.installments()), 2, RoundingMode.HALF_UP),
+                    installmentId,
+                    statement,
+                    category);
+
+
+            CreditCardStatement cardStatement = creditCardStatementService
+                    .findOrCreateStatement(
+                            new CreditCardStatementDto(
+                                    installment.getDate().getYear(),
+                                    installment.getDate().getMonthValue(),
+                                    BigDecimal.ZERO,
+                                    creditCard.getId()));
+            installment.setStatement(cardStatement);
+
+            //Add amount due on Statement
+            cardStatement.addAmountDue(installment.getAmount());
+
+            CreditCardTransaction creditCardTransactionCreated = creditCardTransactionRepository.save(installment);
+
+            cardStatement.getCreditCardTransactions().add(creditCardTransactionCreated);
+
+            creditCardStatementRepository.save(cardStatement);
+            creditCardTransactionDtos.add(CreditCardTransactionDto.fromCreditCard(creditCardTransactionCreated));
+        }
+        return creditCardTransactionDtos;
     }
 
-    public void refundCreditCardTransaction(String installmentId) {
+    //TODO
+    public List<CreditCardTransactionDto> refundCreditCardTransaction(String installmentId) {
         List<CreditCardTransaction> creditCardTransactions = creditCardTransactionRepository
                 .findByInstallmentId(installmentId).orElseThrow(() -> new TransactionInstallMentNotFoundException(installmentId));
+        List<CreditCardTransactionDto> creditCardTransactionDtos = new ArrayList<>();
+
         for (CreditCardTransaction installment : creditCardTransactions) {
             if (!installment.isRefunded()) {
+                creditCardTransactionDtos.add(CreditCardTransactionDto.fromCreditCard(installment));
 
                 //Busca os bancos que foram debitadas para dar o credito
                 List<BankAccount> bankAccounts = creditCardTransactionRepository.findBankAccountsByInstallmentId(installment.getStatement().getId());
@@ -89,56 +119,16 @@ public class CreditCardTransactionService {
                 );
             }
         }
+        return creditCardTransactionDtos;
     }
 
 
-    public void payCreditCardStatement(Long statementId, Long bankAccountId) {
-        CreditCardStatement statement = creditCardStatementRepository.findById(statementId)
-                .orElseThrow(() -> new CreditCardStatementNotFoundException(statementId));
-
-        BankAccount bankAccount = bankAccountRepository.findById(bankAccountId)
-                .orElseThrow(() -> new BankAccountNotFoundException(bankAccountId));
-
-        if (statement.isPayed()) {
-            throw new StatementAlreadyPaidException("Statement is already paid");
-        }
-
-        // Create a transaction to record the payment
-        Transaction transaction = new Transaction(statement.getAmountDue(), TransactionType.DEBIT, true, statement,
-                bankAccount);
-
-        // Update the statement to mark it as paid
-        statement.setPayed(true);
-        statement.setEffectivedDate(LocalDateTime.now());
-
-        // Save the transaction and update the statement
-        transactionRepository.save(transaction);
-        creditCardStatementRepository.save(statement);
-
-        // Update the account balance
-        bankAccount.debit(statement.getAmountDue());
-        bankAccountRepository.save(bankAccount);
-
-        //Debit from wallet
-        walletService.debitWalletBalance(new WalletDto(statement.getAmountDue(), bankAccount.getUser().getId()));
-    }
-
-    private CreditCardStatement findOrCreateStatement(CreditCard creditCard, LocalDateTime date) {
-        int month = date.getMonthValue();
-        int year = date.getYear();
-        return creditCardStatementRepository.findByCreditCardAndMonthAndYear(creditCard, month, year)
-                .orElseGet(() -> {
-                    return new CreditCardStatement(month, year, BigDecimal.ZERO, creditCard);
-                });
-    }
-
-
-    public CreditCardTransactionDto create(CreditCardTransactionDto creditCardTransactionDto) {
-        var CreditCardTransactionCreated = creditCardTransactionRepository.save(creditCardTransactionDto.toCreditCardTransaction());
-        return new CreditCardTransactionDto(CreditCardTransactionCreated.getDate(), CreditCardTransactionCreated.getAmount(),
-                CreditCardTransactionCreated.getInstallmentId(), CreditCardTransactionCreated.getStatement().getId());
-
-    }
+//    public CreditCardTransactionDto create(CreditCardTransactionDto creditCardTransactionDto) {
+//        var CreditCardTransactionCreated = creditCardTransactionRepository.save(creditCardTransactionDto.toCreditCardTransaction());
+//        return new CreditCardTransactionDto(CreditCardTransactionCreated.getDate(), CreditCardTransactionCreated.getAmount(),
+//                CreditCardTransactionCreated.getInstallmentId(), CreditCardTransactionCreated.getStatement().getId());
+//
+//    }
 
     public List<CreditCardTransactionDto> findAll() {
 

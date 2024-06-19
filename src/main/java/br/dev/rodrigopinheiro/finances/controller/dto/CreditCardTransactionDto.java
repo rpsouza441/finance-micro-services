@@ -22,11 +22,11 @@ public record CreditCardTransactionDto(
         );
     }
 
-    public CreditCardTransaction toCreditCardTransaction() {
-    var creditCardStatement = new CreditCardStatement();
-    creditCardStatement.setId(creditCardStatementId);
-    return new CreditCardTransaction(date,amount,installmentId,creditCardStatement);
-}
+//    public CreditCardTransaction toCreditCardTransaction() {
+//    var creditCardStatement = new CreditCardStatement();
+//    creditCardStatement.setId(creditCardStatementId);
+//    return new CreditCardTransaction(date,amount,installmentId,creditCardStatement);
+//}
 
 
 }

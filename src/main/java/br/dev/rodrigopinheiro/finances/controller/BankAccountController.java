@@ -33,12 +33,12 @@ public class BankAccountController {
 
     @GetMapping("{id}")
     public BankAccountDto get(@PathVariable("id") Long id) {
-        return bankAccountService.findById(id);
+        return bankAccountService.findBankAccountDtoById(id);
     }
 
     @PutMapping("{id}")
     public ResponseEntity<BankAccountDto> update(@PathVariable("id") Long id, @RequestBody @Valid BankAccountDto bankAccountDto) {
-        return ResponseEntity.status(HttpStatus.CREATED).body( bankAccountService.update(id, bankAccountDto));
+        return ResponseEntity.status(HttpStatus.CREATED).body(bankAccountService.update(id, bankAccountDto));
     }
 
     @DeleteMapping("{id}")

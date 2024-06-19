@@ -15,30 +15,32 @@ import java.util.List;
 public class CreditCardStatementController {
 
     private final CreditCardStatementService creditCardStatementService;
+
     public CreditCardStatementController(CreditCardStatementService creditCardStatementService) {
         this.creditCardStatementService = creditCardStatementService;
     }
 
-    @PostMapping
-    public ResponseEntity<CreditCardStatementDto> create(@RequestBody @Valid CreditCardStatementDto creditCardStatementDto) {
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(creditCardStatementService.create(creditCardStatementDto.toCreditCardStatement()));
-    }
+    //Statement isn't created or updated by user interaction, is created by credit card transaction
+//    @PostMapping
+//    public ResponseEntity<CreditCardStatementDto> create(@RequestBody @Valid CreditCardStatementDto creditCardStatementDto) {
+//        return ResponseEntity.status(HttpStatus.CREATED)
+//                .body(creditCardStatementService.create(creditCardStatementDto));
+//    }
+//    @PutMapping("{id}")
+//    public ResponseEntity<CreditCardStatementDto> update(@PathVariable("id") Long id, @RequestBody @Valid CreditCardStatementDto creditCardStatementDto) {
+//        return ResponseEntity.status(HttpStatus.CREATED).body(creditCardStatementService.update(id, creditCardStatementDto));
+//    }
 
     @GetMapping
     public List<CreditCardStatementDto> getAll() {
         return creditCardStatementService.findAll();
     }
 
-    @GetMapping("{id}")
-    public CreditCardStatementDto get(@PathVariable("id") Long id) {
-        return creditCardStatementService.findById(id);
+    @GetMapping()
+    public CreditCardStatementDto get(@RequestBody @Valid CreditCardStatementDto creditCardStatementDto) {
+        return creditCardStatementService.findOrCreateStatementDto(creditCardStatementDto);
     }
 
-    @PutMapping("{id}")
-    public ResponseEntity<CreditCardStatementDto> update(@PathVariable("id") Long id, @RequestBody @Valid CreditCardStatementDto creditCardStatementDto) {
-        return ResponseEntity.status(HttpStatus.CREATED).body( creditCardStatementService.update(id, creditCardStatementDto));
-    }
 
     @DeleteMapping("{id}")
     public ResponseEntity<?> delete(@PathVariable("id") Long id) {

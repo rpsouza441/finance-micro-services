@@ -16,6 +16,7 @@ import br.dev.rodrigopinheiro.finances.service.UserService;
 public class UserController {
 
     private final UserService userService;
+
     public UserController(UserService userService) {
         this.userService = userService;
     }
@@ -23,7 +24,7 @@ public class UserController {
     @PostMapping
     public ResponseEntity<UserDto> create(@RequestBody @Valid UserDto userDto) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(userService.create(userDto.toUser()));
+                .body(userService.create(userDto));
     }
 
     @GetMapping
@@ -38,7 +39,7 @@ public class UserController {
 
     @PutMapping("{id}")
     public ResponseEntity<UserDto> update(@PathVariable("id") Long id, @RequestBody @Valid UserDto userDto) {
-        return ResponseEntity.status(HttpStatus.CREATED).body( userService.update(id, userDto));
+        return ResponseEntity.status(HttpStatus.CREATED).body(userService.update(id, userDto));
     }
 
     @DeleteMapping("{id}")
