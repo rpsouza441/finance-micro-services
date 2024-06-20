@@ -1,15 +1,15 @@
 package br.dev.rodrigopinheiro.finances.service;
 
 import br.dev.rodrigopinheiro.finances.controller.dto.*;
-import br.dev.rodrigopinheiro.finances.entity.CreditCard;
+import br.dev.rodrigopinheiro.finances.entity.*;
+import br.dev.rodrigopinheiro.finances.entity.enums.CategoryType;
+import br.dev.rodrigopinheiro.finances.entity.enums.TransactionType;
 import br.dev.rodrigopinheiro.finances.exception.*;
 import br.dev.rodrigopinheiro.finances.repository.*;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Service;
 
-import br.dev.rodrigopinheiro.finances.entity.BankAccount;
-import br.dev.rodrigopinheiro.finances.entity.CreditCardStatement;
-import br.dev.rodrigopinheiro.finances.entity.CreditCardTransaction;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -47,7 +47,6 @@ public class CreditCardTransactionService {
         this.categoryRepository = categoryRepository;
     }
 
-    //TODO
     public List<CreditCardTransactionDto> addCreditCardTransaction(InstallmentDto installmentDto) {
         var creditCard = creditCardRepository.findById(installmentDto.creditCardId()).orElseThrow(() ->
                 new CreditCardNotFoundException(installmentDto.creditCardId()));
@@ -95,7 +94,7 @@ public class CreditCardTransactionService {
         return creditCardTransactionDtos;
     }
 
-    //TODO
+
     public List<CreditCardTransactionDto> refundCreditCardTransaction(String installmentId) {
         List<CreditCardTransaction> creditCardTransactions = creditCardTransactionRepository
                 .findByInstallmentId(installmentId).orElseThrow(() -> new TransactionInstallMentNotFoundException(installmentId));
@@ -103,6 +102,8 @@ public class CreditCardTransactionService {
 
         for (CreditCardTransaction installment : creditCardTransactions) {
             if (!installment.isRefunded()) {
+                installment.setRefunded(true);
+
                 creditCardTransactionDtos.add(CreditCardTransactionDto.fromCreditCard(installment));
 
                 //Busca os bancos que foram debitadas para dar o credito
@@ -112,7 +113,6 @@ public class CreditCardTransactionService {
                     bankAccountRepository.save(bankAccount);
                 }
 
-                installment.setRefunded(true);
                 creditCardTransactionRepository.save(installment);
                 walletService.creditWalletBalance(new WalletDto(installment.getAmount(),
                         installment.getStatement().getCreditCard().getUser().getId())
@@ -121,6 +121,57 @@ public class CreditCardTransactionService {
         }
         return creditCardTransactionDtos;
     }
+
+
+//    @Transactional
+//    public void payCreditCardStatement(RefundStatementDto refundStatementDto) {
+//        CreditCardStatement statement = creditCardStatementRepository.findById(refundStatementDto.statementId())
+//                .orElseThrow(() -> new CreditCardStatementNotFoundException(refundStatementDto.statementId()));
+//
+//        BankAccount account = bankAccountRepository.findById(refundStatementDto.bankAccountId())
+//                .orElseThrow(() -> new BankAccountNotFoundException(refundStatementDto.bankAccountId()));
+//
+//        if (statement.isPayed()) {
+//            throw new StatementAlreadyPaidException("Statement is already paid");
+//        }
+//
+//        if (account.isBalanceEqualOrGreaterThan(refundStatementDto.amount())) {
+//            throw new InsufficientBalanceException(refundStatementDto.amount());
+//        }
+//
+//        // Create a transaction to record the payment
+//        var category = categoryRepository.findByName(CategoryType.STATEMENT_CLOSED.name()).orElseThrow(CategoryNotFoundException::new);
+//        var statementName = "Pagamento da Fatura: " + statement.getMonth() + "/" + statement.getYear() + " " + statement.getCreditCard().getName();
+//        var createdDate = LocalDateTime.now();
+//        var interest = BigDecimal.ZERO;
+//        var discount = BigDecimal.ZERO;
+//        Transaction paymentTransaction = new Transaction(
+//                statementName,
+//                refundStatementDto.amount(),
+//                TransactionType.DEBIT,
+//                true, createdDate,
+//                category,
+//                account);
+//
+//
+//        // Update the account balance
+//        account.debit(refundStatementDto.amount());
+//        bankAccountRepository.save(account);
+//
+//        statement.setAmountPayed(refundStatementDto.amount());
+//
+//        // Mark the statement as paid if is equals to Due
+//        if (statement.getAmountDue().compareTo(refundStatementDto.amount()) == 0) {
+//            statement.setPayed(true);
+//        }
+//
+//        // Save the transaction and update the statement
+//        transactionRepository.save(paymentTransaction);
+//        creditCardStatementRepository.save(statement);
+//
+//        //Debit from wallet
+//        walletService.debitWalletBalance(new WalletDto(refundStatementDto.amount(), account.getUser().getId()));
+//    }
 
 
 //    public CreditCardTransactionDto create(CreditCardTransactionDto creditCardTransactionDto) {

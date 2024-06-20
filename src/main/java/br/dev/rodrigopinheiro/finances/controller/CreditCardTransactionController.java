@@ -2,6 +2,7 @@ package br.dev.rodrigopinheiro.finances.controller;
 
 import br.dev.rodrigopinheiro.finances.controller.dto.CreditCardTransactionDto;
 import br.dev.rodrigopinheiro.finances.controller.dto.InstallmentDto;
+import br.dev.rodrigopinheiro.finances.controller.dto.RefundStatementDto;
 import br.dev.rodrigopinheiro.finances.controller.dto.TransactionDto;
 import br.dev.rodrigopinheiro.finances.service.CreditCardTransactionService;
 import jakarta.validation.Valid;

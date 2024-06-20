@@ -1,6 +1,7 @@
 package br.dev.rodrigopinheiro.finances.service;
 
 import br.dev.rodrigopinheiro.finances.controller.dto.CreditCardStatementDto;
+import br.dev.rodrigopinheiro.finances.controller.dto.RefundStatementDto;
 import br.dev.rodrigopinheiro.finances.controller.dto.WalletDto;
 import br.dev.rodrigopinheiro.finances.entity.*;
 import br.dev.rodrigopinheiro.finances.entity.enums.CategoryType;
@@ -42,56 +43,6 @@ public class CreditCardStatementService {
         this.bankAccountRepository = bankAccountRepository;
         this.transactionRepository = transactionRepository;
         this.categoryRepository = categoryRepository;
-    }
-
-    @Transactional
-    public void payCreditCardStatement(Long statementId, Long bankAccountId, BigDecimal amount) {
-        CreditCardStatement statement = creditCardStatementRepository.findById(statementId)
-                .orElseThrow(() -> new CreditCardStatementNotFoundException(statementId));
-
-        BankAccount account = bankAccountRepository.findById(bankAccountId)
-                .orElseThrow(() -> new BankAccountNotFoundException(bankAccountId));
-
-        if (statement.isPayed()) {
-            throw new StatementAlreadyPaidException("Statement is already paid");
-        }
-
-        if (account.isBalanceEqualOrGreaterThan(amount)) {
-            throw new InsufficientBalanceException(amount);
-        }
-
-        // Create a transaction to record the payment
-        var category = categoryRepository.findByName(CategoryType.STATEMENT_CLOSED.name()).orElseThrow(CategoryNotFoundException::new);
-        var statementName = "Pagamento da Fatura: " + statement.getMonth() + "/" + statement.getYear() + " " + statement.getCreditCard().getName();
-        var createdDate = LocalDateTime.now();
-        var interest = BigDecimal.ZERO;
-        var discount = BigDecimal.ZERO;
-        Transaction paymentTransaction = new Transaction(
-                statementName,
-                amount,
-                TransactionType.DEBIT,
-                true, createdDate,
-                category,
-                account);
-
-
-        // Update the account balance
-        account.debit(amount);
-        bankAccountRepository.save(account);
-
-        statement.setAmountPayed(amount);
-
-        // Mark the statement as paid if is equals to Due
-        if (statement.getAmountDue().compareTo(amount) == 0) {
-            statement.setPayed(true);
-        }
-
-        // Save the transaction and update the statement
-        transactionRepository.save(paymentTransaction);
-        creditCardStatementRepository.save(statement);
-
-        //Debit from wallet
-        walletService.debitWalletBalance(new WalletDto(amount, account.getUser().getId()));
     }
 
 
