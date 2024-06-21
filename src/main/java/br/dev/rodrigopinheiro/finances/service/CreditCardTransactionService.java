@@ -47,6 +47,7 @@ public class CreditCardTransactionService {
         this.categoryRepository = categoryRepository;
     }
 
+    // Adds credit card transactions for the given installment and returns them as a list of DTOs.
     public List<CreditCardTransactionDto> addCreditCardTransaction(InstallmentDto installmentDto) {
         var creditCard = creditCardRepository.findById(installmentDto.creditCardId()).orElseThrow(() ->
                 new CreditCardNotFoundException(installmentDto.creditCardId()));
@@ -94,7 +95,7 @@ public class CreditCardTransactionService {
         return creditCardTransactionDtos;
     }
 
-
+    // Refunds credit card transactions by the given installment ID and returns them as a list of DTOs.
     public List<CreditCardTransactionDto> refundCreditCardTransaction(String installmentId) {
         List<CreditCardTransaction> creditCardTransactions = creditCardTransactionRepository
                 .findByInstallmentId(installmentId).orElseThrow(() -> new TransactionInstallMentNotFoundException(installmentId));
@@ -106,7 +107,7 @@ public class CreditCardTransactionService {
 
                 creditCardTransactionDtos.add(CreditCardTransactionDto.fromCreditCard(installment));
 
-                //Busca os bancos que foram debitadas para dar o credito
+                // Find bank accounts that were debited to credit them
                 List<BankAccount> bankAccounts = creditCardTransactionRepository.findBankAccountsByInstallmentId(installment.getStatement().getId());
                 for (BankAccount bankAccount : bankAccounts) {
                     bankAccount.credit(installment.getAmount());

@@ -29,25 +29,27 @@ public class BankAccountService {
         this.userService = userService;
     }
 
-
+    // Debits the specified amount from the given bank account, saves the updated bank account.
     public void debit(BankAccount bankAccount, BigDecimal value) {
         BankAccount renewedBankAccount = findBankAccountById(bankAccount.getId());
         renewedBankAccount.debit(value);
         bankAccountRepository.save(renewedBankAccount);
     }
 
+    // Credits the specified amount to the given bank account, saves the updated bank account.
     public void credit(BankAccount bankAccount, BigDecimal value) {
         BankAccount renewedBankAccount = findBankAccountById(bankAccount.getId());
         renewedBankAccount.credit(value);
         bankAccountRepository.save(renewedBankAccount);
     }
 
-
+    // Creates a new bank account, saves it, and returns its DTO.
     public BankAccountDto create(BankAccount bankAccount) {
         var bankAccountCreated = bankAccountRepository.save(bankAccount);
         return new BankAccountDto(bankAccountCreated.getBankName(), bankAccountCreated.getBankBalance(), bankAccountCreated.getUser().getId());
     }
 
+    // Finds all bank accounts and returns them as a list of DTOs.
     public List<BankAccountDto> findAll() {
         List<BankAccount> bankAccounts = bankAccountRepository.findAll();
         return bankAccounts.stream()
@@ -56,22 +58,26 @@ public class BankAccountService {
 
     }
 
+    // Finds a bank account by its ID and returns its DTO.
     public BankAccountDto findBankAccountDtoById(Long id) {
         var bankAccount = bankAccountRepository.findById(id).orElseThrow(() -> new BankAccountNotFoundException(id));
         return new BankAccountDto(bankAccount.getBankName(), bankAccount.getBankBalance(), bankAccount.getUser().getId());
 
     }
 
+    // Finds a bank account by its ID.
     public BankAccount findBankAccountById(Long id) {
         return bankAccountRepository.findById(id).orElseThrow(() -> new BankAccountNotFoundException(id));
 
     }
 
+    // Alias for findBankAccountById(Long id)
     public BankAccount findByIdBankAccount(Long id) {
         return bankAccountRepository.findById(id).orElseThrow(() -> new BankAccountNotFoundException(id));
 
     }
 
+    // Updates a bank account with new data from its DTO and returns the updated DTO.
     public BankAccountDto update(Long id, BankAccountDto bankAccountDto) {
         var updatedBankAcount = bankAccountRepository.findById(id).map((existingBankAccount) -> {
             existingBankAccount.setBankName(bankAccountDto.bankName());
@@ -83,6 +89,7 @@ public class BankAccountService {
         return BankAccountDto.fromBankAccount(updatedBankAcount);
     }
 
+    // Deletes a bank account by its ID, throws custom exceptions on failure.
     public void delete(Long id) {
         try {
             bankAccountRepository.deleteById(id);

@@ -37,14 +37,14 @@ public class TransactionService {
         this.categoryRepository = categoryRepository;
     }
 
-    // Método para realizar débito em uma transação
+    // Debits a transaction from the bank account if there is sufficient balance, returns the saved transaction as DTO.
     public TransactionDto debitTransaction(TransactionDto transactionDto) {
         BankAccount bankAccount = bankAccountService.findBankAccountById(transactionDto.bankAccountId());
 
-        // Verifica se há saldo suficiente na conta bancária
+        // Check if the bank account has sufficient balance
         if (bankAccount.isBalanceEqualOrGreaterThan(transactionDto.amount())) {
             checkIsEffectivedAndCreditOrDebitWalletBankAccount(transactionDto, bankAccount);
-            // Persiste a transação com o saldo debitado
+            // Persist the transaction with the debited balance
             return TransactionDto.fromTransaction(
                     transactionRepository.save(transactionDto.toTransaction())
             );
@@ -54,26 +54,26 @@ public class TransactionService {
 
     }
 
-    // Método para realizar crédito em uma transação
+    // Credits a transaction to the bank account, returns the saved transaction as DTO.
     public TransactionDto creditTransaction(TransactionDto transactionDto) {
         BankAccount bankAccount = bankAccountService.findBankAccountById(transactionDto.bankAccountId());
         checkIsEffectivedAndCreditOrDebitWalletBankAccount(transactionDto, bankAccount);
-        // Persiste a transação com o saldo creditado
+        // Persist the transaction with the credited balance
         return TransactionDto.fromTransaction(
                 transactionRepository.save(transactionDto.toTransaction())
         );
     }
 
 
-    // Método para transferir entre contas
+    // Transfers amount between accounts, returns the transactions as a list of DTOs.
     public List<TransactionDto> transferBetweenAccounts(TransferTransactionDto transferTransactionDto) {
-        // Realiza transferência entre contas
+        // Transfer between accounts
         BankAccount debitAccount = bankAccountService.findBankAccountById(transferTransactionDto.fromBankAccountId());
         BankAccount creditAccount = bankAccountService.findBankAccountById(transferTransactionDto.toBankAccountId());
 
         List<TransactionDto> transactionDtos = new ArrayList<>();
 
-        // Verifica se há saldo suficiente na conta de débito
+        // Check if the debit account has sufficient balance
         if (debitAccount.isBalanceEqualOrGreaterThan(transferTransactionDto.amount())) {
 
             var category = categoryRepository.findByName(
@@ -86,7 +86,7 @@ public class TransactionService {
                 creditAccount.credit(transferTransactionDto.amount());
             }
 
-            // Persiste ambas as transações e adiciona à lista
+            // Persist both transactions and add to the list
             transactionDtos.add(TransactionDto.fromTransaction(transactionRepository.save(debitTransaction)));
             transactionDtos.add(TransactionDto.fromTransaction(transactionRepository.save(creditTransaction)));
         } else {
@@ -108,7 +108,7 @@ public class TransactionService {
                 account);
     }
 
-
+    // Marks a transaction as effective and updates the bank account and wallet balances accordingly.
     public TransactionDto markTransactionAsEffective(Long transactionId) {
         Transaction transaction = transactionRepository.findById(transactionId)
                 .orElseThrow(() -> new TransactionNotFoundException(transactionId));

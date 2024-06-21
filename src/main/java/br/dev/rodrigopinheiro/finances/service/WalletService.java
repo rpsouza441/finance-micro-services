@@ -29,12 +29,14 @@ public class WalletService {
         this.userRepository = userRepository;
     }
 
+    // Credits a wallet balance for a user.
     protected void creditWalletBalance(WalletDto walletDto) {
         Wallet wallet = getWalletOrCreate(walletDto.userId());
         wallet.credit(walletDto.ballance());
         walletRepository.save(wallet);
     }
 
+    // Debits a wallet balance for a user.
     protected void debitWalletBalance(WalletDto walletDto) {
         Wallet wallet = getWalletOrCreate(walletDto.userId());
         wallet.debit(walletDto.ballance());

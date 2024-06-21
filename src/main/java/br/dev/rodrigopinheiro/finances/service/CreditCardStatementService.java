@@ -45,19 +45,21 @@ public class CreditCardStatementService {
         this.categoryRepository = categoryRepository;
     }
 
-
+    // Finds or creates a credit card statement based on the provided DTO and returns its DTO.
     public CreditCardStatementDto findOrCreateStatementDto(CreditCardStatementDto cardStatementDto) {
 
         var creditCardStatement = getCreditCardStatement(cardStatementDto);
         return CreditCardStatementDto.fromCreditCardStatement(creditCardStatement);
     }
 
+    // Finds or creates a credit card statement based on the provided DTO.
     public CreditCardStatement findOrCreateStatement(CreditCardStatementDto cardStatementDto) {
 
         return getCreditCardStatement(cardStatementDto);
 
     }
 
+    // Helper method to find or create a credit card statement.
     private CreditCardStatement getCreditCardStatement(CreditCardStatementDto cardStatementDto) {
         CreditCard creditCard = creditCardService.findCreditCard(cardStatementDto.creditCardId());
 
